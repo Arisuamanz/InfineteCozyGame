@@ -39,31 +39,30 @@
     <div id="nextBtn" class="nav-btn">&gt;</div>
 
     <script>
+        // Senarai pautan permainan yang telah disusun semula
         const games = [
-            "https://arisuamanz.github.io/Yandare-girlfriend-/",
+            "https://arisuamanz.github.io/Stack/",
             "https://arisuamanz.github.io/CuteAnimal/",
             "https://arisuamanz.github.io/3DRunsurfer/",
-            "https://arisuamanz.github.io/Stack/",
-            "https://arisuamanz.github.io/Wordle/"
+            "https://arisuamanz.github.io/Towerbuild/",
+            "https://arisuamanz.github.io/Wordle/",
+            "https://arisuamanz.github.io/Guess-number-/"
         ];
 
         let index = 0;
-        let clickCounter = 0; // Pembilang klik untuk iklan
+        let clickCounter = 0; 
         const iframe = document.getElementById('game-iframe');
 
-        // Fungsi untuk menghantar isyarat ke Unity
+        // Fungsi isyarat ke Unity
         const notifyUnityForAds = () => {
-            // Kebanyakan Unity WebView menggunakan Unity.call()
             if (window.Unity) {
                 window.Unity.call("ShowUnityAds");
             } 
-            // Jika anda menggunakan package lain, kadangkala ia menggunakan postMessage
             else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
                 window.webkit.messageHandlers.unityControl.postMessage("ShowUnityAds");
             }
-            // Untuk debugging di browser PC (boleh dibuang nanti)
             else {
-                console.log("Isyarat Iklan: ShowUnityAds dihantar ke Unity");
+                console.log("Isyarat Iklan: ShowUnityAds dihantar");
             }
         };
 
@@ -71,10 +70,9 @@
             index = (index + dir + games.length) % games.length;
             iframe.src = games[index];
 
-            // Tambah pembilang klik
             clickCounter++;
 
-            // Jika sudah 2 kali klik, hantar mesej ke Unity dan reset pembilang
+            // Panggil iklan setiap 2 kali tekan
             if (clickCounter >= 2) {
                 notifyUnityForAds();
                 clickCounter = 0;
