@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cozy Infinite Games</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; }
+        #game-iframe { width: 100%; height: 100%; border: none; display: block; background: #111; }
+
+        .nav-btn {
+            position: absolute; 
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px; 
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #fff; font-size: 18px; font-weight: bold; font-family: sans-serif;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+            z-index: 999; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+        }
+
+        #prevBtn { left: 8px; }
+        #nextBtn { right: 8px; }
+        .nav-btn:active { background: rgba(255, 255, 255, 0.4); transform: translateY(-50%) scale(0.8); }
+    </style>
+</head>
+<body>
+
+    <iframe id="game-iframe" src="" allowfullscreen></iframe>
+
+    <div id="prevBtn" class="nav-btn">&lt;</div>
+    <div id="nextBtn" class="nav-btn">&gt;</div>
+
+    <script>
+        const games = [
+            "https://arisuamanz.github.io/Yandare-girlfriend-/",
+            "https://arisuamanz.github.io/CuteAnimal/",
+            "https://arisuamanz.github.io/3DRunsurfer/",
+            "https://arisuamanz.github.io/Stack/",
+            "https://arisuamanz.github.io/Wordle/"
+        ];
+
+        let index = 0;
+        let clickCounter = 0; // Pembilang klik untuk iklan
+        const iframe = document.getElementById('game-iframe');
+
+        // Fungsi untuk menghantar isyarat ke Unity
+        const notifyUnityForAds = () => {
+            // Kebanyakan Unity WebView menggunakan Unity.call()
+            if (window.Unity) {
+                window.Unity.call("ShowUnityAds");
+            } 
+            // Jika anda menggunakan package lain, kadangkala ia menggunakan postMessage
+            else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                window.webkit.messageHandlers.unityControl.postMessage("ShowUnityAds");
+            }
+            // Untuk debugging di browser PC (boleh dibuang nanti)
+            else {
+                console.log("Isyarat Iklan: ShowUnityAds dihantar ke Unity");
+            }
+        };
+
+        const updateGame = (dir) => {
+            index = (index + dir + games.length) % games.length;
+            iframe.src = games[index];
+
+            // Tambah pembilang klik
+            clickCounter++;
+
+            // Jika sudah 2 kali klik, hantar mesej ke Unity dan reset pembilang
+            if (clickCounter >= 2) {
+                notifyUnityForAds();
+                clickCounter = 0;
+            }
+        };
+
+        document.getElementById('prevBtn').onclick = () => updateGame(-1);
+        document.getElementById('nextBtn').onclick = () => updateGame(1);
+
+        window.onload = () => {
+            iframe.src = games[index];
+        };
+    </script>
+</body>
+</html>
+
