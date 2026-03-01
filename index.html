@@ -182,16 +182,30 @@
 
         // Fungsi isyarat ke Unity untuk memaparkan iklan (Interstitial Ads)
         const showUnityAds = () => {
-            if (window.Unity) {
-                window.Unity.call("ShowUnityAds");
-            } 
-            else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
-                window.webkit.messageHandlers.unityControl.postMessage("ShowUnityAds");
+            const message = "ShowUnityAds";
+
+            try {
+                if (window.Unity && typeof window.Unity.call === "function") {
+                    window.Unity.call(message);
+                    return;
+                }
+
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                    window.webkit.messageHandlers.unityControl.postMessage(message);
+                    return;
+                }
+
+                if (window.location && typeof window.location.href === "string") {
+                    // Fallback for older bridge implementations that listen on the unity: scheme.
+                    window.location.href = `unity:${encodeURIComponent(message)}`;
+                    return;
+                }
+            } catch (error) {
+                console.warn("showUnityAds bridge error:", error);
             }
-            else {
-                // Paparan console untuk tujuan pengujian di browser biasa
-                console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
-            }
+
+            // Browser biasa (tanpa bridge Unity)
+            console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
         };
 
         // Memuatkan permainan
