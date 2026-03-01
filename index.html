@@ -67,7 +67,6 @@
         .game-info {
             padding: 20px;
             padding-bottom: 40px;
-            padding-right: 80px; /* Space for right actions */
             pointer-events: none;
         }
 
@@ -95,34 +94,7 @@
             font-size: 14px;
         }
 
-        /* Right Action Column (Aesthetic like TikTok) */
-        .right-actions {
-            position: absolute;
-            right: 15px;
-            bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            pointer-events: none;
-        }
-
-        .action-icon {
-            width: 45px;
-            height: 45px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            border: 2px solid rgba(255,255,255,0.8);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-
-        /* Menu Button (Shown when playing) - Updated to be smaller and top left */
+        /* Menu Button (Shown when playing) - Top left */
         #menu-btn {
             position: absolute;
             top: 15px;
@@ -132,10 +104,10 @@
             -webkit-backdrop-filter: blur(5px);
             border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            padding: 6px 12px; /* Smaller padding */
-            border-radius: 15px; /* Slightly smaller radius */
+            padding: 6px 12px;
+            border-radius: 15px;
             font-weight: bold;
-            font-size: 12px; /* Smaller font */
+            font-size: 12px;
             z-index: 20;
             display: none;
             cursor: pointer;
@@ -179,11 +151,6 @@
                 <p>Swipe Up / Down</p>
             </div>
 
-            <div class="right-actions">
-                <div class="action-icon">🎮</div>
-                <div class="action-icon" style="font-size: 16px;">🔥</div>
-            </div>
-
             <div class="game-info">
                 <h2 id="game-title">Loading...</h2>
                 <p><span class="play-badge">▶ Tap to Play</span></p>
@@ -193,42 +160,55 @@
     </div>
 
     <script>
-        // Game list with assigned titles
+        // Game list
         const games = [
-            { title: "Stack", url: "https://arisuamanz.github.io/Stack/" },
             { title: "Cute Animal", url: "https://arisuamanz.github.io/CuteAnimal/" },
+            { title: "Stack", url: "https://arisuamanz.github.io/Stack/" },
             { title: "3D Run Surfer", url: "https://arisuamanz.github.io/3DRunsurfer/" },
             { title: "Tower Build", url: "https://arisuamanz.github.io/Towerbuild/" },
+            { title: "Forest ASMR Light", url: "https://arisuamanz.github.io/Forest-Asmr-Light-/" },
             { title: "Wordle", url: "https://arisuamanz.github.io/Wordle/" },
-            { title: "Guess Number", url: "https://arisuamanz.github.io/Guess-number-/" }
+            { title: "Guess Number", url: "https://arisuamanz.github.io/Guess-number-/" },
+            { title: "Yandere Girlfriend", url: "https://arisuamanz.github.io/Yandare-girlfriend-/" }
         ];
 
         let index = 0;
+        let playCounter = 0; // Pembolehubah untuk mengira berapa kali pemain mula bermain
         
         const iframe = document.getElementById('game-iframe');
         const overlay = document.getElementById('tiktok-overlay');
         const menuBtn = document.getElementById('menu-btn');
         const titleEl = document.getElementById('game-title');
 
-        // Initial Load
-        window.onload = () => {
-            loadGame(0); // Load first game without animation
+        // Fungsi isyarat ke Unity untuk memaparkan iklan (Interstitial Ads)
+        const showUnityAds = () => {
+            if (window.Unity) {
+                window.Unity.call("ShowUnityAds");
+            } 
+            else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                window.webkit.messageHandlers.unityControl.postMessage("ShowUnityAds");
+            }
+            else {
+                // Paparan console untuk tujuan pengujian di browser biasa
+                console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
+            }
         };
 
-        // Function to load and animate game change
+        // Memuatkan permainan
+        window.onload = () => {
+            loadGame(0); 
+        };
+
+        // Fungsi animasi tatalan (scroll)
         const loadGame = (dir) => {
-            // Update index
             index = (index + dir + games.length) % games.length;
             
-            // Reset animation
             iframe.className = '';
-            void iframe.offsetWidth; // Trigger reflow to restart animation
+            void iframe.offsetWidth; // Trigger reflow
 
-            // Apply direction animation
             if (dir > 0) iframe.className = 'animate-up';
             else if (dir < 0) iframe.className = 'animate-down';
 
-            // Set new source and title
             iframe.src = games[index].url;
             titleEl.innerText = games[index].title;
         };
@@ -238,13 +218,11 @@
         let endY = 0;
         let isDragging = false;
 
-        // Start touch
         overlay.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
             isDragging = true;
         });
 
-        // End touch
         overlay.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             endY = e.changedTouches[0].clientY;
@@ -256,32 +234,39 @@
         function handleInteraction() {
             const diffY = startY - endY;
             
-            // If swiped more than 50px vertically
+            // Jika ditatal (swipe) lebih daripada 50px
             if (Math.abs(diffY) > 50) {
                 if (diffY > 0) {
-                    // Swiped UP -> Next Game
-                    loadGame(1);
+                    loadGame(1); // Swipe Atas
                 } else {
-                    // Swiped DOWN -> Previous Game
-                    loadGame(-1);
+                    loadGame(-1); // Swipe Bawah
                 }
             } 
-            // If movement is very small, treat it as a TAP
+            // Jika pergerakan kecil (Tap/Sentuh)
             else if (Math.abs(diffY) < 10) {
                 playGame();
             }
         }
 
-        // --- PLAY AND MENU TOGGLE ---
+        // --- MULA BERMAIN DAN PAPAR IKLAN (SETIAP 2 KALI) ---
         function playGame() {
-            // Hide TikTok overlay to allow playing the game
+            playCounter++; // Tambah kiraan setiap kali "Tap to Play" ditekan
+
+            // Semak jika kiraan mencapai 2
+            if (playCounter >= 2) {
+                showUnityAds(); // Panggil iklan Unity
+                playCounter = 0; // Reset kiraan kembali ke 0
+            }
+
+            // Sembunyikan lapisan lutsinar (overlay) supaya pemain boleh main
             overlay.style.display = 'none';
-            // Show the "Menu" button to return to TikTok mode
+            
+            // Paparkan butang menu
             menuBtn.style.display = 'flex';
         }
 
+        // --- KEMBALI KE MENU TATALAN ---
         menuBtn.onclick = () => {
-            // Hide Menu button and show TikTok overlay again
             menuBtn.style.display = 'none';
             overlay.style.display = 'flex';
         };
@@ -289,5 +274,3 @@
     </script>
 </body>
 </html>
-
-
