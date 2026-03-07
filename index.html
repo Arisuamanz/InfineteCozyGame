@@ -58,6 +58,7 @@
             opacity: 0.7;
             animation: pulse 2s infinite;
             pointer-events: none;
+            transition: opacity 0.5s ease;
         }
         
         .swipe-hint .icon { font-size: 40px; margin-bottom: 8px; display: block; }
@@ -114,14 +115,16 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             align-items: center;
             gap: 4px;
-            transition: background-color 1s ease, border-color 1s ease, color 1s ease, opacity 1s ease; /* Transisi lembut */
+            transition: all 1s ease; /* Transisi lembut untuk semua efek termasuk blur */
         }
 
-        /* Kelas untuk memudarkan butang (transparent) selepas 5 saat */
+        /* Kelas untuk memudarkan butang (transparent) sepenuhnya selepas 5 saat supaya tidak halang UI */
         #menu-btn.faded {
-            background-color: rgba(0,0,0,0.1); /* Sangat lutsinar */
-            border-color: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
+            background-color: transparent; /* Sepenuhnya lutsinar */
+            border-color: transparent; /* Buang garisan */
+            backdrop-filter: blur(0px); /* Buang kesan kabur supaya nampak UI belakang dengan jelas */
+            -webkit-backdrop-filter: blur(0px);
+            color: rgba(255, 255, 255, 0.5); /* Teks sedikit pudar tapi masih boleh dibaca/ditekan */
             box-shadow: none;
         }
 
@@ -155,7 +158,7 @@
         <!-- TikTok Scroll Overlay -->
         <div id="tiktok-overlay">
             
-            <div class="swipe-hint">
+            <div class="swipe-hint" id="swipe-hint-el">
                 <span class="icon">↕</span>
                 <p>Swipe Up / Down</p>
             </div>
@@ -187,11 +190,13 @@
         let index = 0;
         let playCounter = 0; // Pembolehubah untuk mengira berapa kali pemain mula bermain
         let fadeTimeout; // Timer untuk efek lutsinar butang menu
+        let hasSwiped = false; // Pembolehubah untuk mengesan jika pemain sudah scroll
         
         const iframe = document.getElementById('game-iframe');
         const overlay = document.getElementById('tiktok-overlay');
         const menuBtn = document.getElementById('menu-btn');
         const titleEl = document.getElementById('game-title');
+        const swipeHintEl = document.getElementById('swipe-hint-el');
 
         // Fungsi isyarat ke Unity untuk memaparkan iklan (Interstitial Ads)
         const showUnityAds = () => {
@@ -263,6 +268,13 @@
             
             // Jika ditatal (swipe) lebih daripada 50px
             if (Math.abs(diffY) > 50) {
+                
+                // Sembunyikan hint "Swipe Up / Down" selepas scroll pertama
+                if (!hasSwiped) {
+                    hasSwiped = true;
+                    swipeHintEl.style.display = 'none';
+                }
+
                 if (diffY > 0) {
                     loadGame(1); // Swipe Atas
                 } else {
@@ -293,7 +305,7 @@
             menuBtn.classList.remove('faded');
             clearTimeout(fadeTimeout);
 
-            // Set pemasa 5 saat untuk memudarkan butang
+            // Set pemasa 5 saat untuk memudarkan butang sepenuhnya
             fadeTimeout = setTimeout(() => {
                 menuBtn.classList.add('faded');
             }, 5000);
