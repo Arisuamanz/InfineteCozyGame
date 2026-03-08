@@ -98,37 +98,46 @@
         /* Menu Button (Shown when playing) - Top left */
         #menu-btn {
             position: absolute;
-            top: 70px; 
+            top: 100px; /* Diturunkan kepada 100px */
             left: 15px;
             background-color: rgba(0,0,0,0.7); /* Latar belakang gelap sikit pada mulanya */
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
             border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
+            padding: 8px 16px; /* Dibesarkan sikit */
+            border-radius: 20px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px; /* Saiz font dibesarkan sikit */
             z-index: 20;
             display: none;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             align-items: center;
-            gap: 4px;
-            transition: all 1s ease; /* Transisi lembut untuk semua efek termasuk blur */
+            gap: 6px;
+            transition: all 1s ease; /* Transisi lembut untuk semua efek termasuk blur dan opacity */
+        }
+
+        /* Teks dengan efek gradient hitam putih liplap (bersinar) */
+        .text-gradient {
+            background: linear-gradient(90deg, #ffffff 0%, #555555 50%, #ffffff 100%);
+            background-size: 200% auto;
+            color: #fff;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textShine 1.5s linear infinite;
         }
 
         /* Kelas untuk memudarkan butang (transparent) sepenuhnya selepas 5 saat supaya tidak halang UI */
         #menu-btn.faded {
             background-color: transparent; /* Sepenuhnya lutsinar */
             border-color: transparent; /* Buang garisan */
-            backdrop-filter: blur(0px); /* Buang kesan kabur supaya nampak UI belakang dengan jelas */
+            backdrop-filter: blur(0px); /* Buang kesan kabur */
             -webkit-backdrop-filter: blur(0px);
-            color: rgba(255, 255, 255, 0.5); /* Teks sedikit pudar tapi masih boleh dibaca/ditekan */
             box-shadow: none;
+            opacity: 0.4; /* Turunkan opacity keseluruhan butang (termasuk teks) supaya pudar */
         }
 
-        /* Scroll Animations */
+        /* Scroll Animations & Text Shine Animations */
         @keyframes slideUpIn {
             0% { transform: translateY(100%); opacity: 0; }
             100% { transform: translateY(0); opacity: 1; }
@@ -140,6 +149,9 @@
         @keyframes pulse {
             0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
             50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+        @keyframes textShine {
+            to { background-position: 200% center; }
         }
 
         .animate-up { animation: slideUpIn 0.35s ease-out forwards; }
@@ -153,7 +165,7 @@
         <iframe id="game-iframe" src="" allowfullscreen></iframe>
 
         <!-- Menu Button (Visible during gameplay) -->
-        <div id="menu-btn">☰ Menu</div>
+        <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
 
         <!-- TikTok Scroll Overlay -->
         <div id="tiktok-overlay">
