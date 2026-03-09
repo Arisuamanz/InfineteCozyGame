@@ -11,12 +11,11 @@
             width: 100%; 
             height: 100%; 
             overflow: hidden; 
-            background: #000; /* Latar belakang hitam supaya nampak kemas masa swipe */
+            background: #000; 
             touch-action: none; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* Container utama */
         #game-container {
             width: 100%;
             height: 100%;
@@ -24,17 +23,19 @@
             overflow: hidden;
         }
 
-        /* Pembungkus (Wrapper) yang akan ditarik oleh jari dan diluncurkan */
-        #swipe-wrapper {
-            width: 100%;
-            height: 100%;
+        /* Wrapper untuk menggerakkan 3 frame serentak */
+        #frame-wrapper {
             position: absolute;
             top: 0;
             left: 0;
-            will-change: transform; /* Hardware Acceleration untuk 60FPS */
+            width: 100%;
+            height: 100%;
+            will-change: transform;
         }
 
-        #game-iframe { 
+        /* Kelas asas untuk iframe */
+        .game-frame {
+            position: absolute;
             width: 100%; 
             height: 100%; 
             border: none; 
@@ -58,7 +59,6 @@
             user-select: none;
         }
 
-        /* Swipe Hint in the center */
         .swipe-hint {
             position: absolute;
             top: 50%;
@@ -68,17 +68,17 @@
             opacity: 0.8;
             animation: pulse 2s infinite;
             pointer-events: none;
-            transition: opacity 0.4s ease; /* Transisi untuk hilangkan hint */
+            transition: opacity 0.4s ease;
         }
         
         .swipe-hint .icon { font-size: 40px; margin-bottom: 8px; display: block; }
         .swipe-hint p { margin: 0; font-size: 16px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 
-        /* Game Info Bottom Left */
         .game-info {
             padding: 20px;
             padding-bottom: 40px;
             pointer-events: none;
+            z-index: 11;
         }
 
         .game-info h2 {
@@ -98,7 +98,7 @@
         }
 
         .play-badge {
-            background: #ff0050; /* TikTok Pinkish/Red */
+            background: #ff0050; 
             padding: 5px 14px;
             border-radius: 20px;
             font-weight: bold;
@@ -106,7 +106,6 @@
             box-shadow: 0 2px 5px rgba(255, 0, 80, 0.4);
         }
 
-        /* Menu Button (Top left) - Kedudukan top 100px */
         #menu-btn {
             position: absolute;
             top: 100px; 
@@ -128,7 +127,6 @@
             transition: all 1s ease; 
         }
 
-        /* Teks dengan efek gradient liplap */
         .text-gradient {
             background: linear-gradient(90deg, #ffffff 0%, #555555 50%, #ffffff 100%);
             background-size: 200% auto;
@@ -138,7 +136,6 @@
             animation: textShine 1.5s linear infinite;
         }
 
-        /* Transparent penuh selepas 5 saat */
         #menu-btn.faded {
             background-color: transparent; 
             border-color: transparent; 
@@ -161,28 +158,27 @@
 
     <div id="game-container">
         
-        <!-- Menu Button (Terletak di luar wrapper supaya tak ikut di-scroll) -->
+        <!-- Butang Menu (Kekal di luar supaya tidak bergerak) -->
         <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
 
-        <!-- Pembungkus (Wrapper) yang akan ditarik oleh jari (Fizikal) -->
-        <div id="swipe-wrapper">
-            <!-- The Game Iframe -->
-            <iframe id="game-iframe" src="" allowfullscreen></iframe>
-
-            <!-- TikTok Scroll Overlay -->
-            <div id="tiktok-overlay">
-                
-                <div class="swipe-hint" id="swipe-hint-el">
-                    <span class="icon">↕</span>
-                    <p>Swipe Up / Down</p>
-                </div>
-
-                <div class="game-info">
-                    <h2 id="game-title">Loading...</h2>
-                    <p><span class="play-badge">▶ Tap to Play</span></p>
-                </div>
-
+        <!-- Lapisan TikTok Overlay (Diasingkan supaya sentiasa di atas) -->
+        <div id="tiktok-overlay">
+            <div class="swipe-hint" id="swipe-hint-el">
+                <span class="icon">↕</span>
+                <p>Swipe Up / Down</p>
             </div>
+
+            <div class="game-info">
+                <h2 id="game-title">Loading...</h2>
+                <p><span class="play-badge">▶ Tap to Play</span></p>
+            </div>
+        </div>
+
+        <!-- Pembungkus 3-Iframe untuk Preload -->
+        <div id="frame-wrapper">
+            <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
+            <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
+            <iframe class="game-frame" id="frame-next" allowfullscreen></iframe>
         </div>
 
     </div>
@@ -202,23 +198,40 @@
         ];
 
         let index = 0;
-        let playCounter = 0; 
         let fadeTimeout; 
         let hasSwiped = false; 
         
-        const swipeWrapper = document.getElementById('swipe-wrapper');
-        const iframe = document.getElementById('game-iframe');
+        const wrapper = document.getElementById('frame-wrapper');
         const overlay = document.getElementById('tiktok-overlay');
         const menuBtn = document.getElementById('menu-btn');
         const titleEl = document.getElementById('game-title');
         const swipeHintEl = document.getElementById('swipe-hint-el');
 
-        // Initial Load Game 1
+        // Struktur 3 Frame Pintar
+        let frames = {
+            prev: document.getElementById('frame-prev'),
+            curr: document.getElementById('frame-curr'),
+            next: document.getElementById('frame-next')
+        };
+
+        // Mulakan dan Preload 3 Game sekaligus
         window.onload = () => {
-            iframe.src = games[index].url;
+            const total = games.length;
+            
+            // Susun kedudukan asal (Atas, Tengah, Bawah)
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Muatkan URL untuk setiap frame
+            frames.curr.src = games[index].url;
+            frames.next.src = games[(index + 1) % total].url;
+            frames.prev.src = games[(index - 1 + total) % total].url;
+
             titleEl.innerText = games[index].title;
         };
 
+        // Fungsi panggil iklan Unity
         const showUnityAds = () => {
             const message = "ShowUnityAds";
             try {
@@ -235,109 +248,123 @@
             console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
         };
 
-        // --- FIZIKAL SMOOTH DRAG LENGKAP (TOUCHMOVE) ---
+        // --- FIZIKAL SMOOTH DRAG LENGKAP ---
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
-        const SWIPE_THRESHOLD = 80; // Jarak minimum untuk tukar game
+        let isAnimating = false; // Elak gangguan bila tengah scroll
+        const SWIPE_THRESHOLD = 80; 
 
         overlay.addEventListener('touchstart', (e) => {
+            if (isAnimating) return;
             startY = e.touches[0].clientY;
             currentY = startY;
             isDragging = true;
             
-            // Buang transition supaya wrapper ikut jari 1:1 tanpa lengah
-            swipeWrapper.style.transition = 'none';
+            wrapper.style.transition = 'none';
         });
 
         overlay.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault(); // Elak browser scroll lalai
+            if (!isDragging || isAnimating) return;
+            e.preventDefault(); 
             
             currentY = e.touches[0].clientY;
             const diffY = currentY - startY;
             
-            // Gerakkan wrapper berserta Iframe ikut jari
-            swipeWrapper.style.transform = `translateY(${diffY}px)`;
+            wrapper.style.transform = `translateY(${diffY}px)`;
         }, { passive: false });
 
         overlay.addEventListener('touchend', (e) => {
-            if (!isDragging) return;
+            if (!isDragging || isAnimating) return;
             isDragging = false;
             const diffY = currentY - startY;
             
-            // Hilangkan hint scroll jika pengguna dah scroll
             if (Math.abs(diffY) > 20 && !hasSwiped) {
                 hasSwiped = true;
                 swipeHintEl.style.opacity = '0';
                 setTimeout(() => swipeHintEl.style.display = 'none', 400);
             }
 
-            // Tambah efek lantunan (cubic-bezier) untuk animasi pelepasan jari
-            swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-
             if (diffY < -SWIPE_THRESHOLD) {
-                // Swipe Atas - Luncur laju ke atas skrin
-                swipeWrapper.style.transform = `translateY(-100vh)`;
-                setTimeout(() => ubahGameLatarBelakang(1), 400); 
+                // Meluncur ke Next Game (Atas)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(-100%)`;
+                setTimeout(() => anjakFrameKitaran(1), 400); 
             } 
             else if (diffY > SWIPE_THRESHOLD) {
-                // Swipe Bawah - Luncur laju ke bawah skrin
-                swipeWrapper.style.transform = `translateY(100vh)`;
-                setTimeout(() => ubahGameLatarBelakang(-1), 400);
+                // Meluncur ke Prev Game (Bawah)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(100%)`;
+                setTimeout(() => anjakFrameKitaran(-1), 400);
             } 
             else {
-                // Sentuhan kecil / Batal Swipe -> Melantun semula ke tengah
-                swipeWrapper.style.transform = `translateY(0)`;
+                // Batal Swipe
+                wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(0)`;
                 if (Math.abs(diffY) < 10) {
-                    playGame(); // Tap to play
+                    playGame();
                 }
             }
         });
 
-        // --- PENUKARAN GAME DI LATAR BELAKANG ---
-        function ubahGameLatarBelakang(dir) {
-            // Update Index
-            index = (index + dir + games.length) % games.length;
+        // --- SISTEM KITARAN PRELOAD PINTAR ---
+        function anjakFrameKitaran(dir) {
+            const total = games.length;
             
-            // 1. Matikan transisi & Pindah kedudukan wrapper ke arah bertentangan SECARA SERTA MERTA
-            swipeWrapper.style.transition = 'none';
+            // Matikan transisi untuk reset kedudukan wrapper secara rahsia
+            wrapper.style.transition = 'none';
+            wrapper.style.transform = `translateY(0)`;
+
             if (dir > 0) {
-                // Jika tadi kita swipe naik, game baru perlu muncul dari BAWAH (100vh)
-                swipeWrapper.style.transform = `translateY(100vh)`;
-            } else {
-                // Jika tadi kita swipe turun, game baru perlu muncul dari ATAS (-100vh)
-                swipeWrapper.style.transform = `translateY(-100vh)`;
+                // Bergerak ke game SETERUSNYA
+                index = (index + 1) % total;
+                
+                // Pusingkan rujukan DOM (Frame lama jadi frame baru)
+                let tempPrev = frames.prev;
+                frames.prev = frames.curr;
+                frames.curr = frames.next;
+                frames.next = tempPrev;
+
+                // Muatkan game akan datang ke dalam frame yang paling hujung (sebagai persediaan)
+                frames.next.src = games[(index + 1) % total].url;
+            } 
+            else {
+                // Bergerak ke game SEBELUMNYA
+                index = (index - 1 + total) % total;
+                
+                // Pusingkan rujukan DOM
+                let tempNext = frames.next;
+                frames.next = frames.curr;
+                frames.curr = frames.prev;
+                frames.prev = tempNext;
+
+                // Muatkan game akan datang ke dalam frame yang paling hujung (sebagai persediaan)
+                frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
-            // 2. Tukar Game & Title masa ia duduk luar skrin (Elak flickering putih nampak depan mata)
-            iframe.src = games[index].url;
-            titleEl.innerText = games[index].title;
+            // Kemaskini CSS Top secara rahsia tanpa dilihat pengguna
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
 
-            // 3. Pasang balik animasi Cubic Bezier & luncurkan perlahan-lahan ke tengah (0)
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    swipeWrapper.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
-                    swipeWrapper.style.transform = `translateY(0)`;
-                });
-            });
+            // Kemaskini Tajuk Game
+            titleEl.innerText = games[index].title;
+            isAnimating = false; // Benarkan user swipe lagi
         }
 
         // --- PLAY GAME ---
         function playGame() {
-            playCounter++; 
-            if (playCounter >= 2) {
-                showUnityAds(); 
-                playCounter = 0; 
-            }
-
+            // Sembunyikan lapisan lutsinar (overlay) supaya pemain boleh main
             overlay.style.display = 'none';
             
+            // Munculkan butang menu
             menuBtn.style.display = 'flex';
             menuBtn.classList.remove('faded');
             clearTimeout(fadeTimeout);
 
-            // Selepas 5 saat butang menu jadi transparent penuh
+            // Selepas 5 saat, butang menu jadi pudar/transparent
             fadeTimeout = setTimeout(() => {
                 menuBtn.classList.add('faded');
             }, 5000);
@@ -345,6 +372,10 @@
 
         // --- BUTTON MENU ---
         menuBtn.onclick = () => {
+            // Panggil iklan Unity di sini sahaja!
+            showUnityAds(); 
+
+            // Kembali ke overlay
             menuBtn.style.display = 'none';
             overlay.style.display = 'flex';
             clearTimeout(fadeTimeout); 
