@@ -23,7 +23,7 @@
             overflow: hidden;
         }
 
-        /* Wrapper untuk menggerakkan 3 frame serentak */
+        /* Wrapper for moving 3 frames simultaneously */
         #frame-wrapper {
             position: absolute;
             top: 0;
@@ -33,7 +33,7 @@
             will-change: transform;
         }
 
-        /* Kelas asas untuk iframe */
+        /* Base class for iframe */
         .game-frame {
             position: absolute;
             width: 100%; 
@@ -158,10 +158,10 @@
 
     <div id="game-container">
         
-        <!-- Butang Menu (Kekal di luar supaya tidak bergerak) -->
+        <!-- Menu Button (Remains outside so it doesn't move) -->
         <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
 
-        <!-- Lapisan TikTok Overlay (Diasingkan supaya sentiasa di atas) -->
+        <!-- TikTok Overlay Layer (Separated to stay on top) -->
         <div id="tiktok-overlay">
             <div class="swipe-hint" id="swipe-hint-el">
                 <span class="icon">↕</span>
@@ -174,7 +174,7 @@
             </div>
         </div>
 
-        <!-- Pembungkus 3-Iframe untuk Preload -->
+        <!-- 3-Iframe Wrapper for Preload -->
         <div id="frame-wrapper">
             <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
             <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
@@ -194,12 +194,14 @@
             { title: "Guess Number", url: "https://arisuamanz.github.io/Guess-number-/" },
             { title: "Yandere Girlfriend", url: "https://arisuamanz.github.io/Yandare-girlfriend-/" },
             { title: "Coming Soon", url: "https://arisuamanz.github.io/Coming-Soon/" },
-            { title: "Lonely Dictator", url: "https://arisuamanz.github.io/Lonely-Dictator-/" }
+            { title: "Lonely Dictator", url: "https://arisuamanz.github.io/Lonely-Dictator-/" },
+            { title: "Light Down", url: "https://arisuamanz.github.io/Light-Down/" }
         ];
 
         let index = 0;
         let fadeTimeout; 
         let hasSwiped = false; 
+        let menuClickCount = 0; // Pembolehubah baru untuk mengira klik butang menu
         
         const wrapper = document.getElementById('frame-wrapper');
         const overlay = document.getElementById('tiktok-overlay');
@@ -207,23 +209,23 @@
         const titleEl = document.getElementById('game-title');
         const swipeHintEl = document.getElementById('swipe-hint-el');
 
-        // Struktur 3 Frame Pintar
+        // Smart 3-Frame Structure
         let frames = {
             prev: document.getElementById('frame-prev'),
             curr: document.getElementById('frame-curr'),
             next: document.getElementById('frame-next')
         };
 
-        // Mulakan dan Preload 3 Game sekaligus
+        // Initialize and Preload 3 Games at once
         window.onload = () => {
             const total = games.length;
             
-            // Susun kedudukan asal (Atas, Tengah, Bawah)
+            // Set initial positions (Top, Center, Bottom)
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
-            // Muatkan URL untuk setiap frame
+            // Load URL for each frame
             frames.curr.src = games[index].url;
             frames.next.src = games[(index + 1) % total].url;
             frames.prev.src = games[(index - 1 + total) % total].url;
@@ -231,7 +233,7 @@
             titleEl.innerText = games[index].title;
         };
 
-        // Fungsi panggil iklan Unity
+        // Function to call Unity Ads
         const showUnityAds = () => {
             const message = "ShowUnityAds";
             try {
@@ -245,14 +247,14 @@
                     window.location.href = `unity:${encodeURIComponent(message)}`; return;
                 }
             } catch (error) { console.warn("showUnityAds bridge error:", error); }
-            console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
+            console.log("Ad Signal: ShowUnityAds called from web.");
         };
 
-        // --- FIZIKAL SMOOTH DRAG LENGKAP ---
+        // --- FULL PHYSICAL SMOOTH DRAG ---
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
-        let isAnimating = false; // Elak gangguan bila tengah scroll
+        let isAnimating = false; // Prevent issues when scrolling
         const SWIPE_THRESHOLD = 80; 
 
         overlay.addEventListener('touchstart', (e) => {
@@ -286,21 +288,21 @@
             }
 
             if (diffY < -SWIPE_THRESHOLD) {
-                // Meluncur ke Next Game (Atas)
+                // Slide to Next Game (Top)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(-100%)`;
                 setTimeout(() => anjakFrameKitaran(1), 400); 
             } 
             else if (diffY > SWIPE_THRESHOLD) {
-                // Meluncur ke Prev Game (Bawah)
+                // Slide to Prev Game (Bottom)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(100%)`;
                 setTimeout(() => anjakFrameKitaran(-1), 400);
             } 
             else {
-                // Batal Swipe
+                // Cancel Swipe
                 wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(0)`;
                 if (Math.abs(diffY) < 10) {
@@ -309,73 +311,77 @@
             }
         });
 
-        // --- SISTEM KITARAN PRELOAD PINTAR ---
+        // --- SMART PRELOAD CYCLING SYSTEM ---
         function anjakFrameKitaran(dir) {
             const total = games.length;
             
-            // Matikan transisi untuk reset kedudukan wrapper secara rahsia
+            // Turn off transition to secretly reset wrapper position
             wrapper.style.transition = 'none';
             wrapper.style.transform = `translateY(0)`;
 
             if (dir > 0) {
-                // Bergerak ke game SETERUSNYA
+                // Move to NEXT game
                 index = (index + 1) % total;
                 
-                // Pusingkan rujukan DOM (Frame lama jadi frame baru)
+                // Rotate DOM references
                 let tempPrev = frames.prev;
                 frames.prev = frames.curr;
                 frames.curr = frames.next;
                 frames.next = tempPrev;
 
-                // Muatkan game akan datang ke dalam frame yang paling hujung (sebagai persediaan)
+                // Preload upcoming game
                 frames.next.src = games[(index + 1) % total].url;
             } 
             else {
-                // Bergerak ke game SEBELUMNYA
+                // Move to PREV game
                 index = (index - 1 + total) % total;
                 
-                // Pusingkan rujukan DOM
+                // Rotate DOM references
                 let tempNext = frames.next;
                 frames.next = frames.curr;
                 frames.curr = frames.prev;
                 frames.prev = tempNext;
 
-                // Muatkan game akan datang ke dalam frame yang paling hujung (sebagai persediaan)
+                // Preload upcoming game
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
-            // Kemaskini CSS Top secara rahsia tanpa dilihat pengguna
+            // Secretly update CSS Top without user noticing
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
-            // Kemaskini Tajuk Game
+            // Update Game Title
             titleEl.innerText = games[index].title;
-            isAnimating = false; // Benarkan user swipe lagi
+            isAnimating = false; // Allow user to swipe again
         }
 
         // --- PLAY GAME ---
         function playGame() {
-            // Sembunyikan lapisan lutsinar (overlay) supaya pemain boleh main
+            // Hide transparent overlay so user can play
             overlay.style.display = 'none';
             
-            // Munculkan butang menu
+            // Show menu button
             menuBtn.style.display = 'flex';
             menuBtn.classList.remove('faded');
             clearTimeout(fadeTimeout);
 
-            // Selepas 5 saat, butang menu jadi pudar/transparent
+            // After 5 seconds, menu button becomes faded/transparent
             fadeTimeout = setTimeout(() => {
                 menuBtn.classList.add('faded');
             }, 5000);
         }
 
-        // --- BUTTON MENU ---
+        // --- MENU BUTTON LOGIC (Show Ads on clicks 1, 4, 7, 10...) ---
         menuBtn.onclick = () => {
-            // Panggil iklan Unity di sini sahaja!
-            showUnityAds(); 
+            menuClickCount++; // Tambah kiraan setiap kali tekan
 
-            // Kembali ke overlay
+            // Jika kiraan klik mod 3 adalah 1, tunjukkan iklan
+            if (menuClickCount % 3 === 1) {
+                showUnityAds();
+            }
+
+            // Return to overlay
             menuBtn.style.display = 'none';
             overlay.style.display = 'flex';
             clearTimeout(fadeTimeout); 
