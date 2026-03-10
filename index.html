@@ -57,7 +57,6 @@
             justify-content: flex-end;
             color: white;
             user-select: none;
-            outline: none; /* Buang border biru bila difokuskan */
         }
 
         .swipe-hint {
@@ -163,8 +162,7 @@
         <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
 
         <!-- TikTok Overlay Layer (Separated to stay on top) -->
-        <!-- Ditambah tabindex="0" supaya boleh menerima fokus bila game di pause -->
-        <div id="tiktok-overlay" tabindex="0">
+        <div id="tiktok-overlay">
             <div class="swipe-hint" id="swipe-hint-el">
                 <span class="icon">↕</span>
                 <p>Swipe Up / Down</p>
@@ -203,7 +201,7 @@
         let index = 0;
         let fadeTimeout; 
         let hasSwiped = false; 
-        let menuClickCount = 0; // Pembolehubah baru untuk mengira klik butang menu
+        let menuClickCount = 0; 
         
         const wrapper = document.getElementById('frame-wrapper');
         const overlay = document.getElementById('tiktok-overlay');
@@ -317,65 +315,76 @@
         function anjakFrameKitaran(dir) {
             const total = games.length;
             
+            // Turn off transition to secretly reset wrapper position
             wrapper.style.transition = 'none';
             wrapper.style.transform = `translateY(0)`;
 
             if (dir > 0) {
+                // Move to NEXT game
                 index = (index + 1) % total;
+                
+                // Rotate DOM references
                 let tempPrev = frames.prev;
                 frames.prev = frames.curr;
                 frames.curr = frames.next;
                 frames.next = tempPrev;
+
+                // Preload upcoming game
                 frames.next.src = games[(index + 1) % total].url;
             } 
             else {
+                // Move to PREV game
                 index = (index - 1 + total) % total;
+                
+                // Rotate DOM references
                 let tempNext = frames.next;
                 frames.next = frames.curr;
                 frames.curr = frames.prev;
                 frames.prev = tempNext;
+
+                // Preload upcoming game
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
+            // Secretly update CSS Top without user noticing
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
+            // Update Game Title
             titleEl.innerText = games[index].title;
-            isAnimating = false; 
+            isAnimating = false; // Allow user to swipe again
         }
 
-        // --- PLAY GAME (Resume) ---
+        // --- PLAY GAME ---
         function playGame() {
+            // Hide transparent overlay so user can play
             overlay.style.display = 'none';
             
-            // 1. Berikan semula fokus kepada game supaya ia 'Resume'
-            frames.curr.focus();
-            try { frames.curr.contentWindow.postMessage('resume', '*'); } catch(e) {}
-
+            // Show menu button
             menuBtn.style.display = 'flex';
             menuBtn.classList.remove('faded');
             clearTimeout(fadeTimeout);
 
+            // After 5 seconds, menu button becomes faded/transparent
             fadeTimeout = setTimeout(() => {
                 menuBtn.classList.add('faded');
             }, 5000);
         }
 
-        // --- MENU BUTTON LOGIC (Pause) ---
+        // --- MENU BUTTON LOGIC ---
         menuBtn.onclick = () => {
             menuClickCount++; 
 
+            // Tunjuk iklan pada klik 1, 4, 7, 10...
             if (menuClickCount % 3 === 1) {
                 showUnityAds();
             }
 
-            // 1. Tarik keluar fokus dari iframe untuk 'Pause' game
-            frames.curr.blur();
-            overlay.focus();
-            // Langkah tambahan hantar isyarat pause
-            try { frames.curr.contentWindow.postMessage('pause', '*'); } catch(e) {}
+            // Force reload iframe supaya game reset serta-merta bila masuk menu
+            frames.curr.src = games[index].url;
 
+            // Return to overlay
             menuBtn.style.display = 'none';
             overlay.style.display = 'flex';
             clearTimeout(fadeTimeout); 
