@@ -197,13 +197,13 @@
             { title: "Lonely Dictator", url: "https://arisuamanz.github.io/Lonely-Dictator-/" },
             { title: "Light Down", url: "https://arisuamanz.github.io/Light-Down/" },
             { title: "Solar Smash", url: "https://arisuamanz.github.io/Solar-Smash/" },
-            { title: "Painting Circuit", url: "https://arisuamanz.github.io/Painting-circuit-/" }
+            { title: "Painting Circuit", url: "https://arisuamanz.github.io/Painting-circuit-/" },
+            { title: "Virtual Kurumi", url: "https://arisuamanz.github.io/Virtual-Kurumi/" }
         ];
 
         let index = 0;
         let fadeTimeout; 
         let hasSwiped = false; 
-        let menuClickCount = 0; 
         
         const wrapper = document.getElementById('frame-wrapper');
         const overlay = document.getElementById('tiktok-overlay');
@@ -233,23 +233,6 @@
             frames.prev.src = games[(index - 1 + total) % total].url;
 
             titleEl.innerText = games[index].title;
-        };
-
-        // Function to call Unity Ads
-        const showUnityAds = () => {
-            const message = "ShowUnityAds";
-            try {
-                if (window.Unity && typeof window.Unity.call === "function") {
-                    window.Unity.call(message); return;
-                }
-                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
-                    window.webkit.messageHandlers.unityControl.postMessage(message); return;
-                }
-                if (window.location && typeof window.location.href === "string") {
-                    window.location.href = `unity:${encodeURIComponent(message)}`; return;
-                }
-            } catch (error) { console.warn("showUnityAds bridge error:", error); }
-            console.log("Ad Signal: ShowUnityAds called from web.");
         };
 
         // --- FULL PHYSICAL SMOOTH DRAG ---
@@ -376,13 +359,6 @@
 
         // --- MENU BUTTON LOGIC ---
         menuBtn.onclick = () => {
-            menuClickCount++; 
-
-            // Tunjuk iklan pada klik 1, 4, 7, 10...
-            if (menuClickCount % 3 === 1) {
-                showUnityAds();
-            }
-
             // Force reload iframe supaya game reset serta-merta bila masuk menu
             frames.curr.src = games[index].url;
 
