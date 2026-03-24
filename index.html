@@ -23,6 +23,7 @@
             overflow: hidden;
         }
 
+        /* Wrapper for moving 3 frames simultaneously */
         #frame-wrapper {
             position: absolute;
             top: 0;
@@ -32,6 +33,7 @@
             will-change: transform;
         }
 
+        /* Base class for iframe */
         .game-frame {
             position: absolute;
             width: 100%; 
@@ -41,6 +43,7 @@
             background: #111; 
         }
 
+        /* TikTok Style Overlay */
         #tiktok-overlay {
             position: absolute;
             top: 0;
@@ -155,10 +158,10 @@
 
     <div id="game-container">
         
-        <!-- Menu Button -->
+        <!-- Menu Button (Remains outside so it doesn't move) -->
         <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
 
-        <!-- TikTok Overlay Layer -->
+        <!-- TikTok Overlay Layer (Separated to stay on top) -->
         <div id="tiktok-overlay">
             <div class="swipe-hint" id="swipe-hint-el">
                 <span class="icon">↕</span>
@@ -181,7 +184,6 @@
     </div>
 
     <script>
-        // Updated game list with only the 7 requested links
         const games = [
             { title: "Cute Animal", url: "https://arisuamanz.github.io/CuteAnimal/" },
             { title: "Stack", url: "https://arisuamanz.github.io/Stack/" },
@@ -195,6 +197,7 @@
         let index = 0;
         let fadeTimeout; 
         let hasSwiped = false; 
+        let menuClickCount = 0; 
         
         const wrapper = document.getElementById('frame-wrapper');
         const overlay = document.getElementById('tiktok-overlay');
@@ -224,6 +227,23 @@
             frames.prev.src = games[(index - 1 + total) % total].url;
 
             titleEl.innerText = games[index].title;
+        };
+
+        // Function to call Unity Ads
+        const showUnityAds = () => {
+            const message = "ShowUnityAds";
+            try {
+                if (window.Unity && typeof window.Unity.call === "function") {
+                    window.Unity.call(message); return;
+                }
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                    window.webkit.messageHandlers.unityControl.postMessage(message); return;
+                }
+                if (window.location && typeof window.location.href === "string") {
+                    window.location.href = `unity:${encodeURIComponent(message)}`; return;
+                }
+            } catch (error) { console.warn("showUnityAds bridge error:", error); }
+            console.log("Ad Signal: ShowUnityAds called from web.");
         };
 
         // --- FULL PHYSICAL SMOOTH DRAG ---
@@ -350,6 +370,13 @@
 
         // --- MENU BUTTON LOGIC ---
         menuBtn.onclick = () => {
+            menuClickCount++; 
+
+            // Tunjuk iklan pada klik 1, 4, 7, 10...
+            if (menuClickCount % 3 === 1) {
+                showUnityAds();
+            }
+
             // Force reload iframe supaya game reset serta-merta bila masuk menu
             frames.curr.src = games[index].url;
 
