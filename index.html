@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cozy Infinite Games</title>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #000; 
+            touch-action: none; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Wrapper for moving 3 frames simultaneously */
+        #frame-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            will-change: transform;
+        }
+
+        /* Base class for iframe */
+        .game-frame {
+            position: absolute;
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            display: block; 
+            background: #111; 
+        }
+
+        /* TikTok Style Overlay */
+        #tiktok-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.9) 100%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white;
+            user-select: none;
+        }
+
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        
+        .swipe-hint .icon { font-size: 40px; margin-bottom: 8px; display: block; }
+        .swipe-hint p { margin: 0; font-size: 16px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        .game-info {
+            padding: 20px;
+            padding-bottom: 40px;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        .game-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .game-info p {
+            margin: 0;
+            font-size: 15px;
+            opacity: 0.9;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .play-badge {
+            background: #ff0050; 
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(255, 0, 80, 0.4);
+        }
+
+        #menu-btn {
+            position: absolute;
+            top: 100px; 
+            left: 15px;
+            background-color: rgba(0,0,0,0.7); 
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px; 
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px; 
+            z-index: 20;
+            display: none;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            align-items: center;
+            gap: 6px;
+            transition: all 1s ease; 
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #ffffff 0%, #555555 50%, #ffffff 100%);
+            background-size: 200% auto;
+            color: #fff;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textShine 1.5s linear infinite;
+        }
+
+        #menu-btn.faded {
+            background-color: transparent; 
+            border-color: transparent; 
+            backdrop-filter: blur(0px); 
+            -webkit-backdrop-filter: blur(0px);
+            box-shadow: none;
+            opacity: 0.4; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+        @keyframes textShine {
+            to { background-position: 200% center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <!-- Menu Button (Remains outside so it doesn't move) -->
+        <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
+
+        <!-- TikTok Overlay Layer (Separated to stay on top) -->
+        <div id="tiktok-overlay">
+            <div class="swipe-hint" id="swipe-hint-el">
+                <span class="icon">↕</span>
+                <p>Swipe Up / Down</p>
+            </div>
+
+            <div class="game-info">
+                <h2 id="game-title">Loading...</h2>
+                <p><span class="play-badge">▶ Tap to Play</span></p>
+            </div>
+        </div>
+
+        <!-- 3-Iframe Wrapper for Preload -->
+        <div id="frame-wrapper">
+            <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
+            <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
+            <iframe class="game-frame" id="frame-next" allowfullscreen></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        const games = [
+            { title: "Cute Animal", url: "https://arisuamanz.github.io/CuteAnimal/" },
+            { title: "Stack", url: "https://arisuamanz.github.io/Stack/" },
+            { title: "Painting Circuit", url: "https://arisuamanz.github.io/Painting-circuit-/" },
+            { title: "3D Run Surfer", url: "https://arisuamanz.github.io/3DRunsurfer/" },
+            { title: "Tower Build", url: "https://arisuamanz.github.io/Towerbuild/" },
+            { title: "Solar Smash", url: "https://arisuamanz.github.io/Solar-Smash/" },
+            { title: "Light Down", url: "https://arisuamanz.github.io/Light-Down/" }
+        ];
+
+        let index = 0;
+        let fadeTimeout; 
+        let hasSwiped = false; 
+        let menuClickCount = 0; 
+        
+        const wrapper = document.getElementById('frame-wrapper');
+        const overlay = document.getElementById('tiktok-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+        const titleEl = document.getElementById('game-title');
+        const swipeHintEl = document.getElementById('swipe-hint-el');
+
+        // Smart 3-Frame Structure
+        let frames = {
+            prev: document.getElementById('frame-prev'),
+            curr: document.getElementById('frame-curr'),
+            next: document.getElementById('frame-next')
+        };
+
+        // Initialize and Preload 3 Games at once
+        window.onload = () => {
+            const total = games.length;
+            
+            // Set initial positions (Top, Center, Bottom)
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Load URL for each frame
+            frames.curr.src = games[index].url;
+            frames.next.src = games[(index + 1) % total].url;
+            frames.prev.src = games[(index - 1 + total) % total].url;
+
+            titleEl.innerText = games[index].title;
+        };
+
+        // Function to call Unity Ads
+        const showUnityAds = () => {
+            const message = "ShowUnityAds";
+            try {
+                if (window.Unity && typeof window.Unity.call === "function") {
+                    window.Unity.call(message); return;
+                }
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                    window.webkit.messageHandlers.unityControl.postMessage(message); return;
+                }
+                if (window.location && typeof window.location.href === "string") {
+                    window.location.href = `unity:${encodeURIComponent(message)}`; return;
+                }
+            } catch (error) { console.warn("showUnityAds bridge error:", error); }
+            console.log("Ad Signal: ShowUnityAds called from web.");
+        };
+
+        // --- FULL PHYSICAL SMOOTH DRAG ---
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+        let isAnimating = false; // Prevent issues when scrolling
+        const SWIPE_THRESHOLD = 80; 
+
+        overlay.addEventListener('touchstart', (e) => {
+            if (isAnimating) return;
+            startY = e.touches[0].clientY;
+            currentY = startY;
+            isDragging = true;
+            
+            wrapper.style.transition = 'none';
+        });
+
+        overlay.addEventListener('touchmove', (e) => {
+            if (!isDragging || isAnimating) return;
+            e.preventDefault(); 
+            
+            currentY = e.touches[0].clientY;
+            const diffY = currentY - startY;
+            
+            wrapper.style.transform = `translateY(${diffY}px)`;
+        }, { passive: false });
+
+        overlay.addEventListener('touchend', (e) => {
+            if (!isDragging || isAnimating) return;
+            isDragging = false;
+            const diffY = currentY - startY;
+            
+            if (Math.abs(diffY) > 20 && !hasSwiped) {
+                hasSwiped = true;
+                swipeHintEl.style.opacity = '0';
+                setTimeout(() => swipeHintEl.style.display = 'none', 400);
+            }
+
+            if (diffY < -SWIPE_THRESHOLD) {
+                // Slide to Next Game (Top)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(-100%)`;
+                setTimeout(() => anjakFrameKitaran(1), 400); 
+            } 
+            else if (diffY > SWIPE_THRESHOLD) {
+                // Slide to Prev Game (Bottom)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(100%)`;
+                setTimeout(() => anjakFrameKitaran(-1), 400);
+            } 
+            else {
+                // Cancel Swipe
+                wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(0)`;
+                if (Math.abs(diffY) < 10) {
+                    playGame();
+                }
+            }
+        });
+
+        // --- SMART PRELOAD CYCLING SYSTEM ---
+        function anjakFrameKitaran(dir) {
+            const total = games.length;
+            
+            // Turn off transition to secretly reset wrapper position
+            wrapper.style.transition = 'none';
+            wrapper.style.transform = `translateY(0)`;
+
+            if (dir > 0) {
+                // Move to NEXT game
+                index = (index + 1) % total;
+                
+                // Rotate DOM references
+                let tempPrev = frames.prev;
+                frames.prev = frames.curr;
+                frames.curr = frames.next;
+                frames.next = tempPrev;
+
+                // Preload upcoming game
+                frames.next.src = games[(index + 1) % total].url;
+            } 
+            else {
+                // Move to PREV game
+                index = (index - 1 + total) % total;
+                
+                // Rotate DOM references
+                let tempNext = frames.next;
+                frames.next = frames.curr;
+                frames.curr = frames.prev;
+                frames.prev = tempNext;
+
+                // Preload upcoming game
+                frames.prev.src = games[(index - 1 + total) % total].url;
+            }
+
+            // Secretly update CSS Top without user noticing
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Update Game Title
+            titleEl.innerText = games[index].title;
+            isAnimating = false; // Allow user to swipe again
+        }
+
+        // --- PLAY GAME ---
+        function playGame() {
+            // Hide transparent overlay so user can play
+            overlay.style.display = 'none';
+            
+            // Show menu button
+            menuBtn.style.display = 'flex';
+            menuBtn.classList.remove('faded');
+            clearTimeout(fadeTimeout);
+
+            // After 5 seconds, menu button becomes faded/transparent
+            fadeTimeout = setTimeout(() => {
+                menuBtn.classList.add('faded');
+            }, 5000);
+        }
+
+        // --- MENU BUTTON LOGIC ---
+        menuBtn.onclick = () => {
+            menuClickCount++; 
+
+            // Tunjuk iklan pada klik 1, 4, 7, 10...
+            if (menuClickCount % 3 === 1) {
+                showUnityAds();
+            }
+
+            // Force reload iframe supaya game reset serta-merta bila masuk menu
+            frames.curr.src = games[index].url;
+
+            // Return to overlay
+            menuBtn.style.display = 'none';
+            overlay.style.display = 'flex';
+            clearTimeout(fadeTimeout); 
+        };
+
+    </script>
+</body>
+</html>
+
+
