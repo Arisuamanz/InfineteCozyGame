@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Koleksi Karakter</title>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #000; 
+            touch-action: none; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #app-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Pembalut untuk menggerakkan 3 frame serentak */
+        #frame-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            will-change: transform;
+        }
+
+        /* Kelas asas untuk iframe */
+        .character-frame {
+            position: absolute;
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            display: block; 
+            background: #111; 
+        }
+
+        /* Lapisan Overlay ala-TikTok */
+        #tiktok-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.9) 100%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white;
+            user-select: none;
+        }
+
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        
+        .swipe-hint .icon { font-size: 40px; margin-bottom: 8px; display: block; }
+        .swipe-hint p { margin: 0; font-size: 16px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        .character-info {
+            padding: 20px;
+            padding-bottom: 40px;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        .character-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .character-info p {
+            margin: 0;
+            font-size: 15px;
+            opacity: 0.9;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .interact-badge {
+            background: #ff0050; 
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(255, 0, 80, 0.4);
+        }
+
+        #menu-btn {
+            position: absolute;
+            top: 40px; 
+            left: 15px;
+            background-color: rgba(0,0,0,0.7); 
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px; 
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px; 
+            z-index: 20;
+            display: none;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            align-items: center;
+            gap: 6px;
+            transition: all 1s ease; 
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #ffffff 0%, #555555 50%, #ffffff 100%);
+            background-size: 200% auto;
+            color: #fff;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textShine 1.5s linear infinite;
+        }
+
+        #menu-btn.faded {
+            background-color: transparent; 
+            border-color: transparent; 
+            backdrop-filter: blur(0px); 
+            -webkit-backdrop-filter: blur(0px);
+            box-shadow: none;
+            opacity: 0.4; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+        @keyframes textShine {
+            to { background-position: 200% center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <!-- Butang Menu (Kekal di luar supaya tidak bergerak semasa leret) -->
+        <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
+
+        <!-- Lapisan Overlay (Diasingkan supaya sentiasa di atas) -->
+        <div id="tiktok-overlay">
+            <div class="swipe-hint" id="swipe-hint-el">
+                <span class="icon">↕</span>
+                <p>Leret Atas / Bawah</p>
+            </div>
+
+            <div class="character-info">
+                <h2 id="character-title">Memuatkan...</h2>
+                <p><span class="interact-badge">▶ Ketik untuk Berinteraksi</span></p>
+            </div>
+        </div>
+
+        <!-- Pembalut 3-Iframe untuk Pra-muat -->
+        <div id="frame-wrapper">
+            <iframe class="character-frame" id="frame-prev" allowfullscreen></iframe>
+            <iframe class="character-frame" id="frame-curr" allowfullscreen></iframe>
+            <iframe class="character-frame" id="frame-next" allowfullscreen></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        // Senarai Karakter
+        const characters = [
+            { title: "Virtual Kurumi", url: "https://arisuamanz.github.io/Virtual-Kurumi/" },
+            { title: "Hiata", url: "https://arisuamanz.github.io/Hiata/" }
+        ];
+
+        let index = 0;
+        let fadeTimeout; 
+        let hasSwiped = false; 
+        let menuClickCount = 0; 
+        
+        const wrapper = document.getElementById('frame-wrapper');
+        const overlay = document.getElementById('tiktok-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+        const titleEl = document.getElementById('character-title');
+        const swipeHintEl = document.getElementById('swipe-hint-el');
+
+        // Struktur Pintar 3-Frame
+        let frames = {
+            prev: document.getElementById('frame-prev'),
+            curr: document.getElementById('frame-curr'),
+            next: document.getElementById('frame-next')
+        };
+
+        // Permulaan dan Pra-muat serentak
+        window.onload = () => {
+            const total = characters.length;
+            
+            // Tetapkan posisi awal (Atas, Tengah, Bawah)
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Muat URL untuk setiap frame
+            frames.curr.src = characters[index].url;
+            frames.next.src = characters[(index + 1) % total].url;
+            frames.prev.src = characters[(index - 1 + total) % total].url;
+
+            titleEl.innerText = characters[index].title;
+        };
+
+        // Fungsi panggil Unity Ads (Kekal sama)
+        const showUnityAds = () => {
+            const message = "ShowUnityAds";
+            try {
+                if (window.Unity && typeof window.Unity.call === "function") {
+                    window.Unity.call(message); return;
+                }
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.unityControl) {
+                    window.webkit.messageHandlers.unityControl.postMessage(message); return;
+                }
+                if (window.location && typeof window.location.href === "string") {
+                    window.location.href = `unity:${encodeURIComponent(message)}`; return;
+                }
+            } catch (error) { console.warn("Ralat jambatan showUnityAds:", error); }
+            console.log("Isyarat Iklan: ShowUnityAds dipanggil dari web.");
+        };
+
+        // --- SISTEM SERET (DRAG) FIZIKAL ---
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+        let isAnimating = false; // Elak isu bertindih semasa tatal
+        const SWIPE_THRESHOLD = 80; 
+
+        overlay.addEventListener('touchstart', (e) => {
+            if (isAnimating) return;
+            startY = e.touches[0].clientY;
+            currentY = startY;
+            isDragging = true;
+            
+            wrapper.style.transition = 'none';
+        });
+
+        overlay.addEventListener('touchmove', (e) => {
+            if (!isDragging || isAnimating) return;
+            e.preventDefault(); 
+            
+            currentY = e.touches[0].clientY;
+            const diffY = currentY - startY;
+            
+            wrapper.style.transform = `translateY(${diffY}px)`;
+        }, { passive: false });
+
+        overlay.addEventListener('touchend', (e) => {
+            if (!isDragging || isAnimating) return;
+            isDragging = false;
+            const diffY = currentY - startY;
+            
+            if (Math.abs(diffY) > 20 && !hasSwiped) {
+                hasSwiped = true;
+                swipeHintEl.style.opacity = '0';
+                setTimeout(() => swipeHintEl.style.display = 'none', 400);
+            }
+
+            if (diffY < -SWIPE_THRESHOLD) {
+                // Leret ke Karakter Seterusnya (Atas)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(-100%)`;
+                setTimeout(() => anjakFrameKitaran(1), 400); 
+            } 
+            else if (diffY > SWIPE_THRESHOLD) {
+                // Leret ke Karakter Sebelumnya (Bawah)
+                isAnimating = true;
+                wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(100%)`;
+                setTimeout(() => anjakFrameKitaran(-1), 400);
+            } 
+            else {
+                // Batal Leretan
+                wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateY(0)`;
+                if (Math.abs(diffY) < 10) {
+                    interactWithCharacter();
+                }
+            }
+        });
+
+        // --- SISTEM KITARAN PRA-MUAT PINTAR ---
+        function anjakFrameKitaran(dir) {
+            const total = characters.length;
+            
+            // Tutup transisi untuk kembalikan posisi secara senyap
+            wrapper.style.transition = 'none';
+            wrapper.style.transform = `translateY(0)`;
+
+            if (dir > 0) {
+                // Bergerak ke karakter SETERUSNYA
+                index = (index + 1) % total;
+                
+                // Pusing rujukan DOM
+                let tempPrev = frames.prev;
+                frames.prev = frames.curr;
+                frames.curr = frames.next;
+                frames.next = tempPrev;
+
+                // Pra-muat karakter akan datang
+                frames.next.src = characters[(index + 1) % total].url;
+            } 
+            else {
+                // Bergerak ke karakter SEBELUMNYA
+                index = (index - 1 + total) % total;
+                
+                // Pusing rujukan DOM
+                let tempNext = frames.next;
+                frames.next = frames.curr;
+                frames.curr = frames.prev;
+                frames.prev = tempNext;
+
+                // Pra-muat karakter akan datang
+                frames.prev.src = characters[(index - 1 + total) % total].url;
+            }
+
+            // Kemas kini CSS secara senyap tanpa disedari pengguna
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Kemas kini Tajuk Karakter
+            titleEl.innerText = characters[index].title;
+            isAnimating = false; // Benarkan pengguna leret semula
+        }
+
+        // --- BERINTERAKSI DENGAN KARAKTER ---
+        function interactWithCharacter() {
+            // Sembunyikan lapisan overlay lutsinar supaya pengguna boleh berinteraksi
+            overlay.style.display = 'none';
+            
+            // Tunjuk butang menu
+            menuBtn.style.display = 'flex';
+            menuBtn.classList.remove('faded');
+            clearTimeout(fadeTimeout);
+
+            // Selepas 5 saat, butang menu menjadi lutsinar/pudar
+            fadeTimeout = setTimeout(() => {
+                menuBtn.classList.add('faded');
+            }, 5000);
+        }
+
+        // --- LOGIK BUTANG MENU ---
+        menuBtn.onclick = () => {
+            menuClickCount++; 
+
+            // Tunjuk iklan pada klik 1, 4, 7, 10...
+            if (menuClickCount % 3 === 1) {
+                showUnityAds();
+            }
+
+            // Paksa muat semula iframe supaya interaksi reset serta-merta bila masuk menu
+            frames.curr.src = characters[index].url;
+
+            // Kembali ke overlay
+            menuBtn.style.display = 'none';
+            overlay.style.display = 'flex';
+            clearTimeout(fadeTimeout); 
+        };
+
+    </script>
+</body>
+</html>
+
+
