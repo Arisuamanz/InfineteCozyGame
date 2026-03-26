@@ -95,6 +95,45 @@
             background: #111; 
         }
 
+        /* --- KAWASAN SWIPE TAMBAHAN (Di atas Bottom UI) --- */
+        #swipe-extension {
+            position: absolute;
+            bottom: 65px; /* Sama dengan tinggi bottom-nav */
+            left: 0;
+            width: 100%;
+            height: 60px; /* Masuk 60px ke dalam kawasan game */
+            z-index: 15;
+            touch-action: none;
+        }
+
+        /* --- TUTORIAL OVERLAY (First time user) --- */
+        #tutorial-overlay {
+            position: absolute;
+            bottom: 135px; /* Di atas kawasan swipe */
+            width: 100%;
+            display: none; /* Disembunyikan secara lalai, JS akan buka jika first time */
+            justify-content: center;
+            z-index: 20;
+            pointer-events: none; /* Supaya tak halang touch */
+            animation: bounce 1.5s infinite;
+        }
+
+        .tut-box {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00e5ff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #00e5ff;
+            box-shadow: 0 4px 10px rgba(0, 229, 255, 0.3);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
         /* --- BOTTOM UI NAVIGATION --- */
         #bottom-nav {
             height: 65px;
@@ -104,7 +143,6 @@
             align-items: center;
             z-index: 10;
             border-top: 1px solid #222;
-            /* Penting: Membenarkan pengesanan swipe tanpa scroll default */
             touch-action: none; 
             user-select: none;
         }
@@ -122,7 +160,7 @@
         }
 
         .nav-item.active {
-            color: #00e5ff; /* Warna Cyan seperti di dalam gambar */
+            color: #00e5ff;
         }
 
         .nav-item svg {
@@ -156,7 +194,15 @@
         </div>
     </div>
 
-    <!-- UI Bawah (Berfungsi juga sebagai zon kesan swipe) -->
+    <!-- Tutorial untuk pengguna kali pertama -->
+    <div id="tutorial-overlay">
+        <div class="tut-box">↕ Swipe up or down here to change games</div>
+    </div>
+
+    <!-- Kawasan swipe yang lutsinar lebih tinggi sedikit masuk ke webview -->
+    <div id="swipe-extension"></div>
+
+    <!-- UI Bawah -->
     <nav id="bottom-nav">
         <div class="nav-item active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -208,18 +254,34 @@
         
         const wrapper = document.getElementById('frame-wrapper');
         const bottomNav = document.getElementById('bottom-nav');
+        const swipeExt = document.getElementById('swipe-extension');
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
         const titleEl = document.getElementById('game-title');
         const counterEl = document.getElementById('game-counter');
         const refreshBtn = document.getElementById('refresh-btn');
 
-        // Struktur 3 Frame Pintar
         let frames = {
             prev: document.getElementById('frame-prev'),
             curr: document.getElementById('frame-curr'),
             next: document.getElementById('frame-next')
         };
 
-        // Fungsi panggil iklan Unity (Disimpan seperti yang dipinta)
+        // --- SISTEM TUTORIAL LOCAL STORAGE ---
+        function checkTutorial() {
+            const hasSeenTutorial = localStorage.getItem('cozyGameTutorialCompleted');
+            if (!hasSeenTutorial) {
+                tutorialOverlay.style.display = 'flex';
+            }
+        }
+        
+        function hideTutorial() {
+            if (tutorialOverlay.style.display !== 'none') {
+                tutorialOverlay.style.display = 'none';
+                localStorage.setItem('cozyGameTutorialCompleted', 'true');
+            }
+        }
+
+        // --- FUNGSI IKLAN UNITY ---
         const showUnityAds = () => {
             const message = "ShowUnityAds";
             try {
@@ -236,98 +298,93 @@
             console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
         };
 
-        // Update UI Atas (Title & Counter)
         function updateHeaderUI() {
             titleEl.innerText = games[index].title;
             counterEl.innerText = `${index + 1}/${games.length}`;
         }
 
-        // Mulakan dan Preload 3 Game sekaligus
         window.onload = () => {
             const total = games.length;
             
-            // Susun kedudukan asal (Atas, Tengah, Bawah)
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
-            // Muatkan URL untuk setiap frame
             frames.curr.src = games[index].url;
             frames.next.src = games[(index + 1) % total].url;
             frames.prev.src = games[(index - 1 + total) % total].url;
 
             updateHeaderUI();
+            checkTutorial(); // Panggil cek tutorial masa loading
         };
 
-        // Refresh Butang ditekan
         refreshBtn.onclick = () => {
-            frames.curr.src = games[index].url; // Reload current game
+            frames.curr.src = games[index].url; 
         };
 
-        // --- FIZIKAL SMOOTH DRAG PADA BOTTOM UI ---
+        // --- FIZIKAL SMOOTH DRAG ---
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
         let isAnimating = false; 
         const SWIPE_THRESHOLD = 50; 
 
-        // Kita letak pengesanan swipe hanya pada bahagian nav bawah
-        bottomNav.addEventListener('touchstart', (e) => {
+        // Fungsi untuk menguruskan sentuhan
+        function handleTouchStart(e) {
             if (isAnimating) return;
             startY = e.touches[0].clientY;
             currentY = startY;
             isDragging = true;
-            
             wrapper.style.transition = 'none';
-        });
+        }
 
-        bottomNav.addEventListener('touchmove', (e) => {
+        function handleTouchMove(e) {
             if (!isDragging || isAnimating) return;
             e.preventDefault(); 
-            
             currentY = e.touches[0].clientY;
             const diffY = currentY - startY;
-            
-            // Kesan pergerakan visual semasa ditarik
             wrapper.style.transform = `translateY(${diffY}px)`;
-        }, { passive: false });
+        }
 
-        bottomNav.addEventListener('touchend', (e) => {
+        function handleTouchEnd(e) {
             if (!isDragging || isAnimating) return;
             isDragging = false;
             const diffY = currentY - startY;
 
             if (diffY < -SWIPE_THRESHOLD) {
-                // Meluncur ke Next Game (Atas)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(-100%)`;
+                hideTutorial(); // Sorok tutorial bila berjaya swipe
                 setTimeout(() => anjakFrameKitaran(1), 400); 
             } 
             else if (diffY > SWIPE_THRESHOLD) {
-                // Meluncur ke Prev Game (Bawah)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(100%)`;
+                hideTutorial(); // Sorok tutorial bila berjaya swipe
                 setTimeout(() => anjakFrameKitaran(-1), 400);
             } 
             else {
-                // Batal Swipe (kembali ke tengah)
                 wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(0)`;
             }
+        }
+
+        // Pasang event listener kepada Bottom Nav DAN Kawasan Tambahan (Swipe Extension)
+        [bottomNav, swipeExt].forEach(el => {
+            el.addEventListener('touchstart', handleTouchStart);
+            el.addEventListener('touchmove', handleTouchMove, { passive: false });
+            el.addEventListener('touchend', handleTouchEnd);
         });
 
-        // --- SISTEM KITARAN PRELOAD PINTAR ---
         function anjakFrameKitaran(dir) {
             const total = games.length;
             
-            // Matikan transisi untuk reset kedudukan wrapper secara rahsia
             wrapper.style.transition = 'none';
             wrapper.style.transform = `translateY(0)`;
 
             if (dir > 0) {
-                // Bergerak ke game SETERUSNYA
                 index = (index + 1) % total;
                 
                 let tempPrev = frames.prev;
@@ -338,7 +395,6 @@
                 frames.next.src = games[(index + 1) % total].url;
             } 
             else {
-                // Bergerak ke game SEBELUMNYA
                 index = (index - 1 + total) % total;
                 
                 let tempNext = frames.next;
@@ -349,7 +405,6 @@
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
-            // Kemaskini CSS Top secara rahsia tanpa dilihat pengguna
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
@@ -361,4 +416,5 @@
     </script>
 </body>
 </html>
+
 
