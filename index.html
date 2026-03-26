@@ -12,18 +12,70 @@
             height: 100%; 
             overflow: hidden; 
             background: #000; 
-            touch-action: none; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* --- TOP HEADER --- */
+        #top-header {
+            height: 50px;
+            background: #0f0f0f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            user-select: none;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+        }
+
+        #game-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        #refresh-btn {
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        #refresh-btn:active {
+            color: #fff;
+        }
+
+        /* --- GAME CONTAINER --- */
         #game-container {
-            width: 100%;
-            height: 100%;
+            flex: 1; /* Mengambil ruang baki di tengah */
             position: relative;
             overflow: hidden;
+            background: #111;
         }
 
-        /* Wrapper for moving 3 frames simultaneously */
+        /* Wrapper untuk menggerakkan 3 frame serentak */
         #frame-wrapper {
             position: absolute;
             top: 0;
@@ -33,7 +85,7 @@
             will-change: transform;
         }
 
-        /* Base class for iframe */
+        /* Kelas asas untuk iframe */
         .game-frame {
             position: absolute;
             width: 100%; 
@@ -43,145 +95,103 @@
             background: #111; 
         }
 
-        /* TikTok Style Overlay */
-        #tiktok-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.9) 100%);
-            z-index: 10;
+        /* --- BOTTOM UI NAVIGATION --- */
+        #bottom-nav {
+            height: 65px;
+            background: #121212;
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            color: white;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10;
+            border-top: 1px solid #222;
+            /* Penting: Membenarkan pengesanan swipe tanpa scroll default */
+            touch-action: none; 
             user-select: none;
         }
 
-        .swipe-hint {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            opacity: 0.8;
-            animation: pulse 2s infinite;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
-        }
-        
-        .swipe-hint .icon { font-size: 40px; margin-bottom: 8px; display: block; }
-        .swipe-hint p { margin: 0; font-size: 16px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-
-        .game-info {
-            padding: 20px;
-            padding-bottom: 40px;
-            pointer-events: none;
-            z-index: 11;
-        }
-
-        .game-info h2 {
-            margin: 0 0 8px 0;
-            font-size: 26px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-        }
-
-        .game-info p {
-            margin: 0;
-            font-size: 15px;
-            opacity: 0.9;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        .nav-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-        }
-
-        .play-badge {
-            background: #ff0050; 
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 2px 5px rgba(255, 0, 80, 0.4);
-        }
-
-        #menu-btn {
-            position: absolute;
-            top: 100px; 
-            left: 15px;
-            background-color: rgba(0,0,0,0.7); 
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 16px; 
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px; 
-            z-index: 20;
-            display: none;
+            justify-content: center;
+            color: #666;
+            font-size: 11px;
+            gap: 4px;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            align-items: center;
-            gap: 6px;
-            transition: all 1s ease; 
+            width: 25%;
         }
 
-        .text-gradient {
-            background: linear-gradient(90deg, #ffffff 0%, #555555 50%, #ffffff 100%);
-            background-size: 200% auto;
-            color: #fff;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: textShine 1.5s linear infinite;
+        .nav-item.active {
+            color: #00e5ff; /* Warna Cyan seperti di dalam gambar */
         }
 
-        #menu-btn.faded {
-            background-color: transparent; 
-            border-color: transparent; 
-            backdrop-filter: blur(0px); 
-            -webkit-backdrop-filter: blur(0px);
-            box-shadow: none;
-            opacity: 0.4; 
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-        }
-        @keyframes textShine {
-            to { background-position: 200% center; }
-        }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        
-        <!-- Menu Button (Remains outside so it doesn't move) -->
-        <div id="menu-btn"><span class="text-gradient">☰ Menu</span></div>
-
-        <!-- TikTok Overlay Layer (Separated to stay on top) -->
-        <div id="tiktok-overlay">
-            <div class="swipe-hint" id="swipe-hint-el">
-                <span class="icon">↕</span>
-                <p>Swipe Up / Down</p>
-            </div>
-
-            <div class="game-info">
-                <h2 id="game-title">Loading...</h2>
-                <p><span class="play-badge">▶ Tap to Play</span></p>
-            </div>
+    <!-- Header Atas -->
+    <div id="top-header">
+        <div class="header-left">
+            <div class="status-dot"></div>
+            <span id="game-title">Loading...</span>
         </div>
+        <div class="header-right">
+            <span id="game-counter">0/0</span>
+            <span id="refresh-btn">↻</span>
+        </div>
+    </div>
 
-        <!-- 3-Iframe Wrapper for Preload -->
+    <!-- Ruang Main Game -->
+    <div id="game-container">
+        <!-- Pembungkus 3-Iframe untuk Preload -->
         <div id="frame-wrapper">
             <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
             <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
             <iframe class="game-frame" id="frame-next" allowfullscreen></iframe>
         </div>
-
     </div>
+
+    <!-- UI Bawah (Berfungsi juga sebagai zon kesan swipe) -->
+    <nav id="bottom-nav">
+        <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect>
+                <path d="M6 12h4"></path>
+                <path d="M8 10v4"></path>
+                <line x1="15" y1="13" x2="15.01" y2="13"></line>
+                <line x1="18" y1="11" x2="18.01" y2="11"></line>
+            </svg>
+            <span>Game</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>All Games</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Profile</span>
+        </div>
+    </nav>
 
     <script>
         const games = [
@@ -195,41 +205,21 @@
         ];
 
         let index = 0;
-        let fadeTimeout; 
-        let hasSwiped = false; 
-        let menuClickCount = 0; 
         
         const wrapper = document.getElementById('frame-wrapper');
-        const overlay = document.getElementById('tiktok-overlay');
-        const menuBtn = document.getElementById('menu-btn');
+        const bottomNav = document.getElementById('bottom-nav');
         const titleEl = document.getElementById('game-title');
-        const swipeHintEl = document.getElementById('swipe-hint-el');
+        const counterEl = document.getElementById('game-counter');
+        const refreshBtn = document.getElementById('refresh-btn');
 
-        // Smart 3-Frame Structure
+        // Struktur 3 Frame Pintar
         let frames = {
             prev: document.getElementById('frame-prev'),
             curr: document.getElementById('frame-curr'),
             next: document.getElementById('frame-next')
         };
 
-        // Initialize and Preload 3 Games at once
-        window.onload = () => {
-            const total = games.length;
-            
-            // Set initial positions (Top, Center, Bottom)
-            frames.prev.style.top = '-100%';
-            frames.curr.style.top = '0%';
-            frames.next.style.top = '100%';
-
-            // Load URL for each frame
-            frames.curr.src = games[index].url;
-            frames.next.src = games[(index + 1) % total].url;
-            frames.prev.src = games[(index - 1 + total) % total].url;
-
-            titleEl.innerText = games[index].title;
-        };
-
-        // Function to call Unity Ads
+        // Fungsi panggil iklan Unity (Disimpan seperti yang dipinta)
         const showUnityAds = () => {
             const message = "ShowUnityAds";
             try {
@@ -243,17 +233,46 @@
                     window.location.href = `unity:${encodeURIComponent(message)}`; return;
                 }
             } catch (error) { console.warn("showUnityAds bridge error:", error); }
-            console.log("Ad Signal: ShowUnityAds called from web.");
+            console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
         };
 
-        // --- FULL PHYSICAL SMOOTH DRAG ---
+        // Update UI Atas (Title & Counter)
+        function updateHeaderUI() {
+            titleEl.innerText = games[index].title;
+            counterEl.innerText = `${index + 1}/${games.length}`;
+        }
+
+        // Mulakan dan Preload 3 Game sekaligus
+        window.onload = () => {
+            const total = games.length;
+            
+            // Susun kedudukan asal (Atas, Tengah, Bawah)
+            frames.prev.style.top = '-100%';
+            frames.curr.style.top = '0%';
+            frames.next.style.top = '100%';
+
+            // Muatkan URL untuk setiap frame
+            frames.curr.src = games[index].url;
+            frames.next.src = games[(index + 1) % total].url;
+            frames.prev.src = games[(index - 1 + total) % total].url;
+
+            updateHeaderUI();
+        };
+
+        // Refresh Butang ditekan
+        refreshBtn.onclick = () => {
+            frames.curr.src = games[index].url; // Reload current game
+        };
+
+        // --- FIZIKAL SMOOTH DRAG PADA BOTTOM UI ---
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
-        let isAnimating = false; // Prevent issues when scrolling
-        const SWIPE_THRESHOLD = 80; 
+        let isAnimating = false; 
+        const SWIPE_THRESHOLD = 50; 
 
-        overlay.addEventListener('touchstart', (e) => {
+        // Kita letak pengesanan swipe hanya pada bahagian nav bawah
+        bottomNav.addEventListener('touchstart', (e) => {
             if (isAnimating) return;
             startY = e.touches[0].clientY;
             currentY = startY;
@@ -262,132 +281,84 @@
             wrapper.style.transition = 'none';
         });
 
-        overlay.addEventListener('touchmove', (e) => {
+        bottomNav.addEventListener('touchmove', (e) => {
             if (!isDragging || isAnimating) return;
             e.preventDefault(); 
             
             currentY = e.touches[0].clientY;
             const diffY = currentY - startY;
             
+            // Kesan pergerakan visual semasa ditarik
             wrapper.style.transform = `translateY(${diffY}px)`;
         }, { passive: false });
 
-        overlay.addEventListener('touchend', (e) => {
+        bottomNav.addEventListener('touchend', (e) => {
             if (!isDragging || isAnimating) return;
             isDragging = false;
             const diffY = currentY - startY;
-            
-            if (Math.abs(diffY) > 20 && !hasSwiped) {
-                hasSwiped = true;
-                swipeHintEl.style.opacity = '0';
-                setTimeout(() => swipeHintEl.style.display = 'none', 400);
-            }
 
             if (diffY < -SWIPE_THRESHOLD) {
-                // Slide to Next Game (Top)
+                // Meluncur ke Next Game (Atas)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(-100%)`;
                 setTimeout(() => anjakFrameKitaran(1), 400); 
             } 
             else if (diffY > SWIPE_THRESHOLD) {
-                // Slide to Prev Game (Bottom)
+                // Meluncur ke Prev Game (Bawah)
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(100%)`;
                 setTimeout(() => anjakFrameKitaran(-1), 400);
             } 
             else {
-                // Cancel Swipe
+                // Batal Swipe (kembali ke tengah)
                 wrapper.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(0)`;
-                if (Math.abs(diffY) < 10) {
-                    playGame();
-                }
             }
         });
 
-        // --- SMART PRELOAD CYCLING SYSTEM ---
+        // --- SISTEM KITARAN PRELOAD PINTAR ---
         function anjakFrameKitaran(dir) {
             const total = games.length;
             
-            // Turn off transition to secretly reset wrapper position
+            // Matikan transisi untuk reset kedudukan wrapper secara rahsia
             wrapper.style.transition = 'none';
             wrapper.style.transform = `translateY(0)`;
 
             if (dir > 0) {
-                // Move to NEXT game
+                // Bergerak ke game SETERUSNYA
                 index = (index + 1) % total;
                 
-                // Rotate DOM references
                 let tempPrev = frames.prev;
                 frames.prev = frames.curr;
                 frames.curr = frames.next;
                 frames.next = tempPrev;
 
-                // Preload upcoming game
                 frames.next.src = games[(index + 1) % total].url;
             } 
             else {
-                // Move to PREV game
+                // Bergerak ke game SEBELUMNYA
                 index = (index - 1 + total) % total;
                 
-                // Rotate DOM references
                 let tempNext = frames.next;
                 frames.next = frames.curr;
                 frames.curr = frames.prev;
                 frames.prev = tempNext;
 
-                // Preload upcoming game
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
-            // Secretly update CSS Top without user noticing
+            // Kemaskini CSS Top secara rahsia tanpa dilihat pengguna
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
-            // Update Game Title
-            titleEl.innerText = games[index].title;
-            isAnimating = false; // Allow user to swipe again
+            updateHeaderUI();
+            isAnimating = false; 
         }
-
-        // --- PLAY GAME ---
-        function playGame() {
-            // Hide transparent overlay so user can play
-            overlay.style.display = 'none';
-            
-            // Show menu button
-            menuBtn.style.display = 'flex';
-            menuBtn.classList.remove('faded');
-            clearTimeout(fadeTimeout);
-
-            // After 5 seconds, menu button becomes faded/transparent
-            fadeTimeout = setTimeout(() => {
-                menuBtn.classList.add('faded');
-            }, 5000);
-        }
-
-        // --- MENU BUTTON LOGIC ---
-        menuBtn.onclick = () => {
-            menuClickCount++; 
-
-            // Tunjuk iklan pada klik 1, 4, 7, 10...
-            if (menuClickCount % 3 === 1) {
-                showUnityAds();
-            }
-
-            // Force reload iframe supaya game reset serta-merta bila masuk menu
-            frames.curr.src = games[index].url;
-
-            // Return to overlay
-            menuBtn.style.display = 'none';
-            overlay.style.display = 'flex';
-            clearTimeout(fadeTimeout); 
-        };
 
     </script>
 </body>
 </html>
-
 
