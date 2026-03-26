@@ -69,7 +69,7 @@
 
         /* --- GAME CONTAINER --- */
         #game-container {
-            flex: 1; /* Mengambil ruang baki di tengah */
+            flex: 1; 
             position: relative;
             overflow: hidden;
             background: #111;
@@ -98,10 +98,10 @@
         /* --- KAWASAN SWIPE TAMBAHAN (Di atas Bottom UI) --- */
         #swipe-extension {
             position: absolute;
-            bottom: 65px; /* Sama dengan tinggi bottom-nav */
+            bottom: 65px; 
             left: 0;
             width: 100%;
-            height: 60px; /* Masuk 60px ke dalam kawasan game */
+            height: 60px; 
             z-index: 15;
             touch-action: none;
         }
@@ -109,12 +109,12 @@
         /* --- TUTORIAL OVERLAY (First time user) --- */
         #tutorial-overlay {
             position: absolute;
-            bottom: 135px; /* Di atas kawasan swipe */
+            bottom: 135px; 
             width: 100%;
-            display: none; /* Disembunyikan secara lalai, JS akan buka jika first time */
+            display: none; 
             justify-content: center;
             z-index: 20;
-            pointer-events: none; /* Supaya tak halang touch */
+            pointer-events: none; 
             animation: bounce 1.5s infinite;
         }
 
@@ -127,11 +127,65 @@
             font-weight: bold;
             border: 1px solid #00e5ff;
             box-shadow: 0 4px 10px rgba(0, 229, 255, 0.3);
+            text-align: center;
         }
 
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
+        }
+
+        /* --- AD LOADING SCREEN --- */
+        #ad-loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999; 
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            user-select: none;
+        }
+
+        .ad-box {
+            background: #1a1a1a;
+            padding: 30px 50px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+        .ad-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 229, 255, 0.2);
+            border-top: 4px solid #00e5ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        .ad-box p {
+            margin: 0;
+            font-size: 16px;
+            color: #ccc;
+        }
+
+        .ad-box h1 {
+            margin: 10px 0 0 0;
+            font-size: 48px;
+            color: #00e5ff;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* --- BOTTOM UI NAVIGATION --- */
@@ -179,7 +233,6 @@
             <span id="game-title">Loading...</span>
         </div>
         <div class="header-right">
-            <span id="game-counter">0/0</span>
             <span id="refresh-btn">↻</span>
         </div>
     </div>
@@ -194,9 +247,18 @@
         </div>
     </div>
 
+    <!-- Panel Loading Iklan (English) -->
+    <div id="ad-loading-screen">
+        <div class="ad-box">
+            <div class="ad-spinner"></div>
+            <p>Ad loading in...</p>
+            <h1 id="ad-countdown">2</h1>
+        </div>
+    </div>
+
     <!-- Tutorial untuk pengguna kali pertama -->
     <div id="tutorial-overlay">
-        <div class="tut-box">↕ Swipe up or down here to change games</div>
+        <div class="tut-box">↕ Swipe up or down at the bottom here to change games</div>
     </div>
 
     <!-- Kawasan swipe yang lutsinar lebih tinggi sedikit masuk ke webview -->
@@ -251,14 +313,18 @@
         ];
 
         let index = 0;
+        let swipeCount = 0; 
         
         const wrapper = document.getElementById('frame-wrapper');
         const bottomNav = document.getElementById('bottom-nav');
         const swipeExt = document.getElementById('swipe-extension');
         const tutorialOverlay = document.getElementById('tutorial-overlay');
         const titleEl = document.getElementById('game-title');
-        const counterEl = document.getElementById('game-counter');
         const refreshBtn = document.getElementById('refresh-btn');
+
+        // Elemen Loading Iklan
+        const adLoadingScreen = document.getElementById('ad-loading-screen');
+        const adCountdownEl = document.getElementById('ad-countdown');
 
         let frames = {
             prev: document.getElementById('frame-prev'),
@@ -294,16 +360,42 @@
                 if (window.location && typeof window.location.href === "string") {
                     window.location.href = `unity:${encodeURIComponent(message)}`; return;
                 }
-            } catch (error) { console.warn("showUnityAds bridge error:", error); }
-            console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
+            } catch (error) { console.warn("Ralat pautan showUnityAds:", error); }
+            console.log(`Ad Signal: ShowUnityAds dipanggil dari web. (Swipe ke-${swipeCount})`);
         };
+
+        // --- FUNGSI LOADING IKLAN ---
+        function triggerAdWithLoading() {
+            adLoadingScreen.style.display = 'flex';
+            let count = 2;
+            adCountdownEl.innerText = count;
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    adCountdownEl.innerText = count;
+                } else {
+                    clearInterval(interval);
+                    adLoadingScreen.style.display = 'none'; 
+                    showUnityAds(); 
+                }
+            }, 1000); 
+        }
 
         function updateHeaderUI() {
             titleEl.innerText = games[index].title;
-            counterEl.innerText = `${index + 1}/${games.length}`;
         }
 
         window.onload = () => {
+            // --- LOAD LAST GAME DARI LOCAL STORAGE ---
+            const savedIndex = localStorage.getItem('cozyLastGameIndex');
+            if (savedIndex !== null) {
+                let parsedIndex = parseInt(savedIndex, 10);
+                if (!isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex < games.length) {
+                    index = parsedIndex;
+                }
+            }
+
             const total = games.length;
             
             frames.prev.style.top = '-100%';
@@ -315,7 +407,7 @@
             frames.prev.src = games[(index - 1 + total) % total].url;
 
             updateHeaderUI();
-            checkTutorial(); // Panggil cek tutorial masa loading
+            checkTutorial(); 
         };
 
         refreshBtn.onclick = () => {
@@ -329,7 +421,6 @@
         let isAnimating = false; 
         const SWIPE_THRESHOLD = 50; 
 
-        // Fungsi untuk menguruskan sentuhan
         function handleTouchStart(e) {
             if (isAnimating) return;
             startY = e.touches[0].clientY;
@@ -355,14 +446,14 @@
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(-100%)`;
-                hideTutorial(); // Sorok tutorial bila berjaya swipe
+                hideTutorial(); 
                 setTimeout(() => anjakFrameKitaran(1), 400); 
             } 
             else if (diffY > SWIPE_THRESHOLD) {
                 isAnimating = true;
                 wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
                 wrapper.style.transform = `translateY(100%)`;
-                hideTutorial(); // Sorok tutorial bila berjaya swipe
+                hideTutorial(); 
                 setTimeout(() => anjakFrameKitaran(-1), 400);
             } 
             else {
@@ -371,7 +462,6 @@
             }
         }
 
-        // Pasang event listener kepada Bottom Nav DAN Kawasan Tambahan (Swipe Extension)
         [bottomNav, swipeExt].forEach(el => {
             el.addEventListener('touchstart', handleTouchStart);
             el.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -405,12 +495,22 @@
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
+            // --- SAVE LAST GAME KE LOCAL STORAGE ---
+            localStorage.setItem('cozyLastGameIndex', index.toString());
+
             frames.prev.style.top = '-100%';
             frames.curr.style.top = '0%';
             frames.next.style.top = '100%';
 
             updateHeaderUI();
             isAnimating = false; 
+
+            // --- LOGIK PANGGILAN IKLAN ---
+            swipeCount++; 
+            
+            if (swipeCount === 2 || (swipeCount >= 10 && swipeCount % 10 === 0)) {
+                triggerAdWithLoading();
+            }
         }
 
     </script>
