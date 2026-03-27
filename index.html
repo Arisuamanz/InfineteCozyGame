@@ -211,6 +211,11 @@
             gap: 4px;
             cursor: pointer;
             width: 25%;
+            transition: color 0.2s;
+        }
+
+        .nav-item:active {
+            color: #fff;
         }
 
         .nav-item.active {
@@ -264,7 +269,7 @@
     <!-- Kawasan swipe yang lutsinar lebih tinggi sedikit masuk ke webview -->
     <div id="swipe-extension"></div>
 
-    <!-- UI Bawah -->
+    <!-- UI Bawah (Dikemaskini dengan butang Prev & Next) -->
     <nav id="bottom-nav">
         <div class="nav-item active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -276,22 +281,23 @@
             </svg>
             <span>Game</span>
         </div>
-        <div class="nav-item">
+        
+        <!-- Butang Previous Game (Arrow Up) -->
+        <div class="nav-item" id="btn-prev">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
+                <polyline points="18 15 12 9 6 15"></polyline>
             </svg>
-            <span>All Games</span>
+            <span>Prev</span>
         </div>
-        <div class="nav-item">
+        
+        <!-- Butang Next Game (Arrow Down) -->
+        <div class="nav-item" id="btn-next">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
-            <span>Search</span>
+            <span>Next</span>
         </div>
+        
         <div class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -325,6 +331,9 @@
         const tutorialOverlay = document.getElementById('tutorial-overlay');
         const titleEl = document.getElementById('game-title');
         const refreshBtn = document.getElementById('refresh-btn');
+
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
 
         // Elemen Loading Iklan
         const adLoadingScreen = document.getElementById('ad-loading-screen');
@@ -431,12 +440,31 @@
             frames.curr.src = games[index].url; 
         };
 
-        // --- FIZIKAL SMOOTH DRAG ---
+        // --- FIZIKAL SMOOTH DRAG & KLIK BUTANG ---
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
         let isAnimating = false; 
         const SWIPE_THRESHOLD = 50; 
+
+        // Fungsi klik untuk butang Prev & Next
+        btnPrev.onclick = (e) => {
+            if (isAnimating) return;
+            isAnimating = true;
+            wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+            wrapper.style.transform = `translateY(100%)`; // Meluncur ke bawah (Game sebelumnya di atas akan turun)
+            hideTutorial(); 
+            setTimeout(() => anjakFrameKitaran(-1), 400);
+        };
+
+        btnNext.onclick = (e) => {
+            if (isAnimating) return;
+            isAnimating = true;
+            wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+            wrapper.style.transform = `translateY(-100%)`; // Meluncur ke atas (Game seterusnya di bawah akan naik)
+            hideTutorial(); 
+            setTimeout(() => anjakFrameKitaran(1), 400);
+        };
 
         function handleTouchStart(e) {
             if (isAnimating) return;
@@ -458,6 +486,9 @@
             if (!isDragging || isAnimating) return;
             isDragging = false;
             const diffY = currentY - startY;
+
+            // Jangan buat apa-apa transisi jika hanya klik biasa (bukan swipe)
+            if (Math.abs(diffY) < 10) return;
 
             if (diffY < -SWIPE_THRESHOLD) {
                 isAnimating = true;
