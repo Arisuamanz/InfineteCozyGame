@@ -313,8 +313,12 @@
         ];
 
         let index = 0;
-        let swipeCount = 0; 
         
+        // --- PEMBOLEHUBAH LOGIK IKLAN BARU ---
+        let adPhase = 1; // Fasa 1: Pertama kali buka, Fasa 2: Fasa kira masa (Timer)
+        let adSwipeCount = 0; // Kiraan swipe untuk iklan
+        let timerFinished = false; // Status adakah 5 minit sudah habis
+
         const wrapper = document.getElementById('frame-wrapper');
         const bottomNav = document.getElementById('bottom-nav');
         const swipeExt = document.getElementById('swipe-extension');
@@ -361,8 +365,21 @@
                     window.location.href = `unity:${encodeURIComponent(message)}`; return;
                 }
             } catch (error) { console.warn("Ralat pautan showUnityAds:", error); }
-            console.log(`Ad Signal: ShowUnityAds dipanggil dari web. (Swipe ke-${swipeCount})`);
+            console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
         };
+
+        // --- FUNGSI MULA MASA (5 MINIT) ---
+        function startAdTimer() {
+            timerFinished = false;
+            adSwipeCount = 0; // Reset kiraan swipe sedia untuk kitaran baru
+            console.log("Timer iklan 5 minit bermula...");
+            
+            // 5 Minit = 5 * 60 * 1000 milisaat = 300000 ms
+            setTimeout(() => {
+                timerFinished = true;
+                console.log("5 minit telah tamat. Menunggu 3 kali swipe untuk tunjuk iklan...");
+            }, 300000); 
+        }
 
         // --- FUNGSI LOADING IKLAN ---
         function triggerAdWithLoading() {
@@ -476,22 +493,18 @@
 
             if (dir > 0) {
                 index = (index + 1) % total;
-                
                 let tempPrev = frames.prev;
                 frames.prev = frames.curr;
                 frames.curr = frames.next;
                 frames.next = tempPrev;
-
                 frames.next.src = games[(index + 1) % total].url;
             } 
             else {
                 index = (index - 1 + total) % total;
-                
                 let tempNext = frames.next;
                 frames.next = frames.curr;
                 frames.curr = frames.prev;
                 frames.prev = tempNext;
-
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
@@ -505,11 +518,25 @@
             updateHeaderUI();
             isAnimating = false; 
 
-            // --- LOGIK PANGGILAN IKLAN ---
-            swipeCount++; 
-            
-            if (swipeCount === 2 || (swipeCount >= 10 && swipeCount % 10 === 0)) {
-                triggerAdWithLoading();
+            // --- LOGIK PANGGILAN IKLAN BERDASARKAN MASA & SWIPE ---
+            if (adPhase === 1) {
+                // Fasa 1: Pertama kali buka, tunggu 3 swipe
+                adSwipeCount++;
+                if (adSwipeCount >= 3) {
+                    triggerAdWithLoading();
+                    adPhase = 2; // Tukar ke fasa berulang (berdasarkan masa)
+                    startAdTimer(); // Mula kira 5 minit
+                }
+            } else if (adPhase === 2) {
+                // Fasa 2: Fasa masa. Jika masa 5 minit dah tamat, baru kira swipe
+                if (timerFinished) {
+                    adSwipeCount++;
+                    if (adSwipeCount >= 3) {
+                        triggerAdWithLoading();
+                        startAdTimer(); // Reset masa 5 minit untuk kitaran seterusnya
+                    }
+                }
+                // Jika masa belum tamat (timerFinished = false), pengguna boleh swipe bebas tanpa iklan
             }
         }
 
