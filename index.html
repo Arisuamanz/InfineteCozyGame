@@ -135,59 +135,6 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* --- AD LOADING SCREEN --- */
-        #ad-loading-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 9999; 
-            display: none; 
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            user-select: none;
-        }
-
-        .ad-box {
-            background: #1a1a1a;
-            padding: 30px 50px;
-            border-radius: 15px;
-            text-align: center;
-            border: 2px solid #00e5ff;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-        }
-
-        .ad-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 229, 255, 0.2);
-            border-top: 4px solid #00e5ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px auto;
-        }
-
-        .ad-box p {
-            margin: 0;
-            font-size: 16px;
-            color: #ccc;
-        }
-
-        .ad-box h1 {
-            margin: 10px 0 0 0;
-            font-size: 48px;
-            color: #00e5ff;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         /* --- BOTTOM UI NAVIGATION --- */
         #bottom-nav {
             height: 65px;
@@ -252,15 +199,6 @@
         </div>
     </div>
 
-    <!-- Panel Loading Iklan (English) -->
-    <div id="ad-loading-screen">
-        <div class="ad-box">
-            <div class="ad-spinner"></div>
-            <p>Ad loading in...</p>
-            <h1 id="ad-countdown">2</h1>
-        </div>
-    </div>
-
     <!-- Tutorial untuk pengguna kali pertama -->
     <div id="tutorial-overlay">
         <div class="tut-box">↕ Swipe up or down at the bottom here to change games</div>
@@ -269,7 +207,7 @@
     <!-- Kawasan swipe yang lutsinar lebih tinggi sedikit masuk ke webview -->
     <div id="swipe-extension"></div>
 
-    <!-- UI Bawah (Dikemaskini dengan butang Prev & Next) -->
+    <!-- UI Bawah -->
     <nav id="bottom-nav">
         <div class="nav-item active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -323,7 +261,7 @@
         // --- PEMBOLEHUBAH LOGIK IKLAN BARU ---
         let adPhase = 1; // Fasa 1: Pertama kali buka, Fasa 2: Fasa kira masa (Timer)
         let adSwipeCount = 0; // Kiraan swipe untuk iklan
-        let timerFinished = false; // Status adakah 5 minit sudah habis
+        let timerFinished = false; // Status adakah masa sudah habis
 
         const wrapper = document.getElementById('frame-wrapper');
         const bottomNav = document.getElementById('bottom-nav');
@@ -334,10 +272,6 @@
 
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
-
-        // Elemen Loading Iklan
-        const adLoadingScreen = document.getElementById('ad-loading-screen');
-        const adCountdownEl = document.getElementById('ad-countdown');
 
         let frames = {
             prev: document.getElementById('frame-prev'),
@@ -377,35 +311,17 @@
             console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
         };
 
-        // --- FUNGSI MULA MASA (5 MINIT) ---
+        // --- FUNGSI MULA MASA (2 MINIT) ---
         function startAdTimer() {
             timerFinished = false;
             adSwipeCount = 0; // Reset kiraan swipe sedia untuk kitaran baru
-            console.log("Timer iklan 5 minit bermula...");
+            console.log("Timer iklan 2 minit bermula...");
             
-            // 5 Minit = 5 * 60 * 1000 milisaat = 300000 ms
+            // 2 Minit = 2 * 60 * 1000 milisaat = 120000 ms
             setTimeout(() => {
                 timerFinished = true;
-                console.log("5 minit telah tamat. Menunggu 3 kali swipe untuk tunjuk iklan...");
-            }, 300000); 
-        }
-
-        // --- FUNGSI LOADING IKLAN ---
-        function triggerAdWithLoading() {
-            adLoadingScreen.style.display = 'flex';
-            let count = 2;
-            adCountdownEl.innerText = count;
-
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    adCountdownEl.innerText = count;
-                } else {
-                    clearInterval(interval);
-                    adLoadingScreen.style.display = 'none'; 
-                    showUnityAds(); 
-                }
-            }, 1000); 
+                console.log("2 minit telah tamat. Menunggu 3 kali swipe untuk tunjuk iklan...");
+            }, 120000); 
         }
 
         function updateHeaderUI() {
@@ -554,17 +470,17 @@
                 // Fasa 1: Pertama kali buka, tunggu 3 swipe
                 adSwipeCount++;
                 if (adSwipeCount >= 3) {
-                    triggerAdWithLoading();
+                    showUnityAds(); // Panggil terus tanpa loading
                     adPhase = 2; // Tukar ke fasa berulang (berdasarkan masa)
-                    startAdTimer(); // Mula kira 5 minit
+                    startAdTimer(); // Mula kira 2 minit
                 }
             } else if (adPhase === 2) {
-                // Fasa 2: Fasa masa. Jika masa 5 minit dah tamat, baru kira swipe
+                // Fasa 2: Fasa masa. Jika masa 2 minit dah tamat, baru kira swipe
                 if (timerFinished) {
                     adSwipeCount++;
                     if (adSwipeCount >= 3) {
-                        triggerAdWithLoading();
-                        startAdTimer(); // Reset masa 5 minit untuk kitaran seterusnya
+                        showUnityAds(); // Panggil terus tanpa loading
+                        startAdTimer(); // Reset masa 2 minit untuk kitaran seterusnya
                     }
                 }
                 // Jika masa belum tamat (timerFinished = false), pengguna boleh swipe bebas tanpa iklan
