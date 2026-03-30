@@ -174,6 +174,77 @@
             height: 24px;
         }
 
+        /* --- SOURCE CODE VIEWER (MODAL) --- */
+        #code-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1c1c1c;
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .cv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+        }
+
+        .cv-title {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .cv-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-copy {
+            background-color: #00e5ff;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-close {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cv-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #1e1e1e;
+        }
+
+        .cv-content pre {
+            color: #dcdcdc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+
     </style>
 </head>
 <body>
@@ -207,6 +278,20 @@
     <!-- Kawasan swipe yang lutsinar lebih tinggi sedikit masuk ke webview -->
     <div id="swipe-extension"></div>
 
+    <!-- SOURCE CODE VIEWER UI -->
+    <div id="code-viewer">
+        <div class="cv-header">
+            <span class="cv-title" id="code-viewer-title">Game - Source Code</span>
+            <div class="cv-buttons">
+                <button class="btn-copy" id="btn-copy">Copy</button>
+                <button class="btn-close" id="btn-close">Close</button>
+            </div>
+        </div>
+        <div class="cv-content">
+            <pre><code id="code-content">Loading source code...</code></pre>
+        </div>
+    </div>
+
     <!-- UI Bawah -->
     <nav id="bottom-nav">
         <div class="nav-item active">
@@ -236,12 +321,13 @@
             <span>Next</span>
         </div>
         
-        <div class="nav-item">
+        <!-- Butang Code (Menggantikan Profile) -->
+        <div class="nav-item" id="btn-code">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
-            <span>Profile</span>
+            <span>Code</span>
         </div>
     </nav>
 
@@ -278,6 +364,15 @@
 
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
+        const btnCode = document.getElementById('btn-code');
+
+        // Elemen Source Code Viewer
+        const codeViewer = document.getElementById('code-viewer');
+        const codeViewerTitle = document.getElementById('code-viewer-title');
+        const codeContent = document.getElementById('code-content');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnClose = document.getElementById('btn-close');
+        let currentRawCode = "";
 
         let frames = {
             prev: document.getElementById('frame-prev'),
@@ -320,10 +415,9 @@
         // --- FUNGSI MULA MASA (2 MINIT) ---
         function startAdTimer() {
             timerFinished = false;
-            adSwipeCount = 0; // Reset kiraan swipe sedia untuk kitaran baru
+            adSwipeCount = 0;
             console.log("Timer iklan 2 minit bermula...");
             
-            // 2 Minit = 2 * 60 * 1000 milisaat = 120000 ms
             setTimeout(() => {
                 timerFinished = true;
                 console.log("2 minit telah tamat. Menunggu 3 kali swipe untuk tunjuk iklan...");
@@ -335,7 +429,6 @@
         }
 
         window.onload = () => {
-            // --- LOAD LAST GAME DARI LOCAL STORAGE ---
             const savedIndex = localStorage.getItem('cozyLastGameIndex');
             if (savedIndex !== null) {
                 let parsedIndex = parseInt(savedIndex, 10);
@@ -362,6 +455,72 @@
             frames.curr.src = games[index].url; 
         };
 
+        // --- LOGIK SOURCE CODE VIEWER ---
+        btnCode.onclick = () => {
+            // 1. Panggil iklan sebaik sahaja tekan butang
+            showUnityAds();
+
+            // 2. Buka antaramuka kod sumber
+            codeViewer.style.display = 'flex';
+            codeViewerTitle.innerText = `${games[index].title} - Source Code`;
+            codeContent.innerText = "Mengambil kod sumber... Sila tunggu sebentar.\n(Fetching source code...)";
+            btnCopy.innerText = "Copy";
+            currentRawCode = "";
+
+            // 3. Tarik kod HTML dari URL menggunakan Fetch API
+            fetch(games[index].url)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.text();
+                })
+                .then(htmlText => {
+                    currentRawCode = htmlText;
+                    codeContent.textContent = htmlText; // Gunakan textContent untuk elak render HTML
+                })
+                .catch(error => {
+                    codeContent.innerText = `Gagal mendapatkan kod sumber.\nRalat: ${error.message}\n\nMungkin disebabkan oleh tetapan CORS dari pelayan sumber.`;
+                });
+        };
+
+        btnClose.onclick = () => {
+            codeViewer.style.display = 'none';
+        };
+
+        btnCopy.onclick = () => {
+            if (!currentRawCode) return;
+            
+            // Cuba guna navigator clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(currentRawCode).then(() => {
+                    btnCopy.innerText = "Copied!";
+                    setTimeout(() => btnCopy.innerText = "Copy", 2000);
+                }).catch(err => copyFallback(currentRawCode));
+            } else {
+                // Fallback jika berada dalam WebView lama
+                copyFallback(currentRawCode);
+            }
+        };
+
+        // Fallback khas untuk menyalin teks (Penting untuk Android WebView / iOS WKWebView)
+        function copyFallback(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";  // Elak scroll turun
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                btnCopy.innerText = "Copied!";
+            } catch (err) {
+                btnCopy.innerText = "Failed";
+            }
+            document.body.removeChild(textArea);
+            setTimeout(() => btnCopy.innerText = "Copy", 2000);
+        }
+
+
         // --- FIZIKAL SMOOTH DRAG & KLIK BUTANG ---
         let startY = 0;
         let currentY = 0;
@@ -369,12 +528,11 @@
         let isAnimating = false; 
         const SWIPE_THRESHOLD = 50; 
 
-        // Fungsi klik untuk butang Prev & Next
         btnPrev.onclick = (e) => {
             if (isAnimating) return;
             isAnimating = true;
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-            wrapper.style.transform = `translateY(100%)`; // Meluncur ke bawah (Game sebelumnya di atas akan turun)
+            wrapper.style.transform = `translateY(100%)`; 
             hideTutorial(); 
             setTimeout(() => anjakFrameKitaran(-1), 400);
         };
@@ -383,7 +541,7 @@
             if (isAnimating) return;
             isAnimating = true;
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-            wrapper.style.transform = `translateY(-100%)`; // Meluncur ke atas (Game seterusnya di bawah akan naik)
+            wrapper.style.transform = `translateY(-100%)`; 
             hideTutorial(); 
             setTimeout(() => anjakFrameKitaran(1), 400);
         };
@@ -409,7 +567,6 @@
             isDragging = false;
             const diffY = currentY - startY;
 
-            // Jangan buat apa-apa transisi jika hanya klik biasa (bukan swipe)
             if (Math.abs(diffY) < 10) return;
 
             if (diffY < -SWIPE_THRESHOLD) {
@@ -461,7 +618,6 @@
                 frames.prev.src = games[(index - 1 + total) % total].url;
             }
 
-            // --- SAVE LAST GAME KE LOCAL STORAGE ---
             localStorage.setItem('cozyLastGameIndex', index.toString());
 
             frames.prev.style.top = '-100%';
@@ -473,23 +629,20 @@
 
             // --- LOGIK PANGGILAN IKLAN BERDASARKAN MASA & SWIPE ---
             if (adPhase === 1) {
-                // Fasa 1: Pertama kali buka, tunggu 3 swipe
                 adSwipeCount++;
                 if (adSwipeCount >= 3) {
-                    showUnityAds(); // Panggil terus tanpa loading
-                    adPhase = 2; // Tukar ke fasa berulang (berdasarkan masa)
-                    startAdTimer(); // Mula kira 2 minit
+                    showUnityAds(); 
+                    adPhase = 2; 
+                    startAdTimer(); 
                 }
             } else if (adPhase === 2) {
-                // Fasa 2: Fasa masa. Jika masa 2 minit dah tamat, baru kira swipe
                 if (timerFinished) {
                     adSwipeCount++;
                     if (adSwipeCount >= 3) {
-                        showUnityAds(); // Panggil terus tanpa loading
-                        startAdTimer(); // Reset masa 2 minit untuk kitaran seterusnya
+                        showUnityAds(); 
+                        startAdTimer(); 
                     }
                 }
-                // Jika masa belum tamat (timerFinished = false), pengguna boleh swipe bebas tanpa iklan
             }
         }
 
