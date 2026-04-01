@@ -67,12 +67,23 @@
             color: #fff;
         }
 
-        /* --- GAME CONTAINER --- */
-        #game-container {
+        /* --- CONTENT AREA (GAME ATAU AI MAKER) --- */
+        #content-area {
             flex: 1; 
             position: relative;
             overflow: hidden;
             background: #111;
+        }
+
+        /* --- GAME CONTAINER --- */
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Secara lalai dipaparkan */
+            display: block; 
         }
 
         /* Wrapper untuk menggerakkan 3 frame serentak */
@@ -95,7 +106,27 @@
             background: #111; 
         }
 
+        /* --- AI GAME MAKER CONTAINER --- */
+        #create-game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Secara lalai disembunyikan */
+            display: none; 
+            background: #000;
+        }
+
+        #create-game-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #111;
+        }
+
         /* --- KAWASAN SWIPE TAMBAHAN (Di atas Bottom UI) --- */
+        /* Hanya aktif bila dalam mode Game */
         #swipe-extension {
             position: absolute;
             bottom: 65px; 
@@ -142,7 +173,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            z-index: 10;
+            z-index: 20; /* Pastikan ia berada di atas segala-galanya */
             border-top: 1px solid #222;
             touch-action: none; 
             user-select: none;
@@ -157,7 +188,7 @@
             font-size: 11px;
             gap: 4px;
             cursor: pointer;
-            width: 25%;
+            width: 20%;
             transition: color 0.2s;
         }
 
@@ -174,7 +205,13 @@
             height: 24px;
         }
 
+        /* Gaya khas untuk butang Create/Tambah apabila aktif */
+        #btn-create.active svg {
+            stroke: #00e5ff; 
+        }
+
         /* --- SOURCE CODE VIEWER (MODAL) --- */
+        /* Modal kod dikekalkan kerana ia adalah "overlay" yang perlu ditutup secara berasingan */
         #code-viewer {
             position: fixed;
             top: 0;
@@ -207,9 +244,7 @@
             gap: 10px;
         }
 
-        .btn-copy {
-            background-color: #00e5ff;
-            color: #000;
+        .btn-copy, .btn-close {
             border: none;
             padding: 8px 16px;
             border-radius: 6px;
@@ -218,16 +253,8 @@
             font-size: 14px;
         }
 
-        .btn-close {
-            background-color: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-        }
+        .btn-copy { background-color: #00e5ff; color: #000; }
+        .btn-close { background-color: #ff4757; color: white; }
 
         .cv-content {
             flex: 1;
@@ -260,14 +287,24 @@
         </div>
     </div>
 
-    <!-- Ruang Main Game -->
-    <div id="game-container">
-        <!-- Pembungkus 3-Iframe untuk Preload -->
-        <div id="frame-wrapper">
-            <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
-            <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
-            <iframe class="game-frame" id="frame-next" allowfullscreen></iframe>
+    <!-- Ruang Kandungan Utama (Bertukar antara Game dan AI Maker) -->
+    <div id="content-area">
+        
+        <!-- Ruang Main Game -->
+        <div id="game-container">
+            <!-- Pembungkus 3-Iframe untuk Preload -->
+            <div id="frame-wrapper">
+                <iframe class="game-frame" id="frame-prev" allowfullscreen></iframe>
+                <iframe class="game-frame" id="frame-curr" allowfullscreen></iframe>
+                <iframe class="game-frame" id="frame-next" allowfullscreen></iframe>
+            </div>
         </div>
+
+        <!-- AI GAME MAKER CONTAINER (Tanpa butang close) -->
+        <div id="create-game-container">
+            <iframe id="create-game-frame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+
     </div>
 
     <!-- Tutorial untuk pengguna kali pertama -->
@@ -284,7 +321,7 @@
             <span class="cv-title" id="code-viewer-title">Game - Source Code</span>
             <div class="cv-buttons">
                 <button class="btn-copy" id="btn-copy">Copy</button>
-                <button class="btn-close" id="btn-close">Close</button>
+                <button class="btn-close" id="btn-close-code">Close</button>
             </div>
         </div>
         <div class="cv-content">
@@ -292,9 +329,10 @@
         </div>
     </div>
 
-    <!-- UI Bawah -->
+    <!-- UI Bawah (Kekal Sentiasa Di Bawah) -->
     <nav id="bottom-nav">
-        <div class="nav-item active">
+        <!-- Butang Game -->
+        <div class="nav-item active" id="btn-nav-game">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect>
                 <path d="M6 12h4"></path>
@@ -312,6 +350,15 @@
             </svg>
             <span>Prev</span>
         </div>
+
+        <!-- Butang Create (+ Tengah) -->
+        <div class="nav-item" id="btn-create">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Create</span>
+        </div>
         
         <!-- Butang Next Game (Arrow Down) -->
         <div class="nav-item" id="btn-next">
@@ -321,7 +368,7 @@
             <span>Next</span>
         </div>
         
-        <!-- Butang Code (Menggantikan Profile) -->
+        <!-- Butang Code -->
         <div class="nav-item" id="btn-code">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 18 22 12 16 6"></polyline>
@@ -332,7 +379,7 @@
     </nav>
 
     <script>
-        // --- SENARAI GAME BAHARU ---
+        // --- SENARAI GAME ---
         const games = [
             { title: "Stack", url: "https://arisuamanz.github.io/Stack/" },
             { title: "Cute Animal", url: "https://arisuamanz.github.io/CuteAnimal/" },
@@ -350,11 +397,11 @@
 
         let index = 0;
         
-        // --- PEMBOLEHUBAH LOGIK IKLAN BARU ---
-        let adPhase = 1; // Fasa 1: Pertama kali buka, Fasa 2: Fasa kira masa (Timer)
-        let adSwipeCount = 0; // Kiraan swipe untuk iklan
-        let timerFinished = false; // Status adakah masa sudah habis
+        let adPhase = 1; 
+        let adSwipeCount = 0; 
+        let timerFinished = false; 
 
+        // DOM Elements
         const wrapper = document.getElementById('frame-wrapper');
         const bottomNav = document.getElementById('bottom-nav');
         const swipeExt = document.getElementById('swipe-extension');
@@ -362,8 +409,16 @@
         const titleEl = document.getElementById('game-title');
         const refreshBtn = document.getElementById('refresh-btn');
 
+        // Navigasi & View Containers
+        const gameContainer = document.getElementById('game-container');
+        const createGameContainer = document.getElementById('create-game-container');
+        const createGameFrame = document.getElementById('create-game-frame');
+
+        // Butang Navigasi
+        const btnNavGame = document.getElementById('btn-nav-game');
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
+        const btnCreate = document.getElementById('btn-create');
         const btnCode = document.getElementById('btn-code');
 
         // Elemen Source Code Viewer
@@ -371,7 +426,7 @@
         const codeViewerTitle = document.getElementById('code-viewer-title');
         const codeContent = document.getElementById('code-content');
         const btnCopy = document.getElementById('btn-copy');
-        const btnClose = document.getElementById('btn-close');
+        const btnCloseCode = document.getElementById('btn-close-code');
         let currentRawCode = "";
 
         let frames = {
@@ -380,7 +435,6 @@
             next: document.getElementById('frame-next')
         };
 
-        // --- SISTEM TUTORIAL LOCAL STORAGE ---
         function checkTutorial() {
             const hasSeenTutorial = localStorage.getItem('cozyGameTutorialCompleted');
             if (!hasSeenTutorial) {
@@ -395,7 +449,6 @@
             }
         }
 
-        // --- FUNGSI IKLAN UNITY ---
         const showUnityAds = () => {
             const message = "ShowUnityAds";
             try {
@@ -412,20 +465,18 @@
             console.log("Ad Signal: ShowUnityAds dipanggil dari web.");
         };
 
-        // --- FUNGSI MULA MASA (2 MINIT) ---
         function startAdTimer() {
             timerFinished = false;
             adSwipeCount = 0;
-            console.log("Timer iklan 2 minit bermula...");
-            
-            setTimeout(() => {
-                timerFinished = true;
-                console.log("2 minit telah tamat. Menunggu 3 kali swipe untuk tunjuk iklan...");
-            }, 120000); 
+            setTimeout(() => { timerFinished = true; }, 120000); 
         }
 
         function updateHeaderUI() {
-            titleEl.innerText = games[index].title;
+            if (gameContainer.style.display !== 'none') {
+                titleEl.innerText = games[index].title;
+            } else {
+                titleEl.innerText = "AI Game Maker";
+            }
         }
 
         window.onload = () => {
@@ -452,22 +503,65 @@
         };
 
         refreshBtn.onclick = () => {
-            frames.curr.src = games[index].url; 
+            // Bergantung pada view mana yang sedang aktif
+            if (gameContainer.style.display !== 'none') {
+                frames.curr.src = games[index].url; 
+            } else {
+                // Refresh AI Maker
+                const currentSrc = createGameFrame.src;
+                createGameFrame.src = '';
+                setTimeout(() => { createGameFrame.src = currentSrc; }, 50);
+            }
+        };
+
+        // --- SISTEM PERTUKARAN TAB (NAV BAR) ---
+        
+        // Tab: Game
+        btnNavGame.onclick = () => {
+            btnNavGame.classList.add('active');
+            btnCreate.classList.remove('active');
+            
+            createGameContainer.style.display = 'none';
+            gameContainer.style.display = 'block';
+            swipeExt.style.display = 'block'; // Aktifkan semula kawasan swipe
+            
+            updateHeaderUI();
+        };
+
+        // Tab: Create
+        btnCreate.onclick = () => {
+            btnCreate.classList.add('active');
+            btnNavGame.classList.remove('active');
+            
+            gameContainer.style.display = 'none';
+            createGameContainer.style.display = 'block';
+            swipeExt.style.display = 'none'; // Matikan kawasan swipe supaya tak terganggu
+            
+            updateHeaderUI();
+
+            // Masukkan link jika iframe masih kosong untuk elak reload setiap kali ditekan
+            const targetUrl = "https://arisuamanz.github.io/Ai-Game-Maker/";
+            if (createGameFrame.src !== targetUrl) {
+                createGameFrame.src = targetUrl;
+            }
         };
 
         // --- LOGIK SOURCE CODE VIEWER ---
         btnCode.onclick = () => {
-            // 1. Panggil iklan sebaik sahaja tekan butang
-            showUnityAds();
+            // Hanya tunjuk kod untuk Game, bukan untuk AI Maker
+            if (gameContainer.style.display === 'none') {
+                alert("Sila kembali ke tab 'Game' untuk melihat kod sumber permainan.");
+                return;
+            }
 
-            // 2. Buka antaramuka kod sumber
+            showUnityAds(); // Panggil Iklan
+
             codeViewer.style.display = 'flex';
             codeViewerTitle.innerText = `${games[index].title} - Source Code`;
             codeContent.innerText = "Mengambil kod sumber... Sila tunggu sebentar.\n(Fetching source code...)";
             btnCopy.innerText = "Copy";
             currentRawCode = "";
 
-            // 3. Tarik kod HTML dari URL menggunakan Fetch API
             fetch(games[index].url)
                 .then(response => {
                     if (!response.ok) throw new Error("Network response was not ok");
@@ -475,37 +569,34 @@
                 })
                 .then(htmlText => {
                     currentRawCode = htmlText;
-                    codeContent.textContent = htmlText; // Gunakan textContent untuk elak render HTML
+                    codeContent.textContent = htmlText; 
                 })
                 .catch(error => {
                     codeContent.innerText = `Gagal mendapatkan kod sumber.\nRalat: ${error.message}\n\nMungkin disebabkan oleh tetapan CORS dari pelayan sumber.`;
                 });
         };
 
-        btnClose.onclick = () => {
+        btnCloseCode.onclick = () => {
             codeViewer.style.display = 'none';
         };
 
         btnCopy.onclick = () => {
             if (!currentRawCode) return;
             
-            // Cuba guna navigator clipboard API
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(currentRawCode).then(() => {
                     btnCopy.innerText = "Copied!";
                     setTimeout(() => btnCopy.innerText = "Copy", 2000);
                 }).catch(err => copyFallback(currentRawCode));
             } else {
-                // Fallback jika berada dalam WebView lama
                 copyFallback(currentRawCode);
             }
         };
 
-        // Fallback khas untuk menyalin teks (Penting untuk Android WebView / iOS WKWebView)
         function copyFallback(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.position = "fixed";  // Elak scroll turun
+            textArea.style.position = "fixed";  
             textArea.style.left = "-999999px";
             document.body.appendChild(textArea);
             textArea.focus();
@@ -520,7 +611,6 @@
             setTimeout(() => btnCopy.innerText = "Copy", 2000);
         }
 
-
         // --- FIZIKAL SMOOTH DRAG & KLIK BUTANG ---
         let startY = 0;
         let currentY = 0;
@@ -528,8 +618,13 @@
         let isAnimating = false; 
         const SWIPE_THRESHOLD = 50; 
 
+        // Navigasi Prev/Next hanya berfungsi di Tab Game
+        const navigasiDiizinkan = () => {
+            return gameContainer.style.display !== 'none' && !isAnimating;
+        };
+
         btnPrev.onclick = (e) => {
-            if (isAnimating) return;
+            if (!navigasiDiizinkan()) return;
             isAnimating = true;
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
             wrapper.style.transform = `translateY(100%)`; 
@@ -538,7 +633,7 @@
         };
 
         btnNext.onclick = (e) => {
-            if (isAnimating) return;
+            if (!navigasiDiizinkan()) return;
             isAnimating = true;
             wrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
             wrapper.style.transform = `translateY(-100%)`; 
@@ -547,7 +642,7 @@
         };
 
         function handleTouchStart(e) {
-            if (isAnimating) return;
+            if (!navigasiDiizinkan()) return;
             startY = e.touches[0].clientY;
             currentY = startY;
             isDragging = true;
@@ -555,7 +650,7 @@
         }
 
         function handleTouchMove(e) {
-            if (!isDragging || isAnimating) return;
+            if (!isDragging || !navigasiDiizinkan()) return;
             e.preventDefault(); 
             currentY = e.touches[0].clientY;
             const diffY = currentY - startY;
@@ -563,7 +658,7 @@
         }
 
         function handleTouchEnd(e) {
-            if (!isDragging || isAnimating) return;
+            if (!isDragging || !navigasiDiizinkan()) return;
             isDragging = false;
             const diffY = currentY - startY;
 
@@ -589,6 +684,7 @@
             }
         }
 
+        // Swipe hanya berfungsi di Nav Bawah dan Extension
         [bottomNav, swipeExt].forEach(el => {
             el.addEventListener('touchstart', handleTouchStart);
             el.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -627,7 +723,6 @@
             updateHeaderUI();
             isAnimating = false; 
 
-            // --- LOGIK PANGGILAN IKLAN BERDASARKAN MASA & SWIPE ---
             if (adPhase === 1) {
                 adSwipeCount++;
                 if (adSwipeCount >= 3) {
