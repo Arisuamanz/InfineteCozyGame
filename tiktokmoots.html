@@ -937,22 +937,39 @@
         };
       }
 
+      function openExternalAnchor(href) {
+        var a = document.createElement("a");
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener external";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        try { a.click(); } catch (_e) {}
+        setTimeout(function () {
+          if (a.parentNode) a.parentNode.removeChild(a);
+        }, 0);
+      }
+
       function openTikTokUrlSmart(url) {
         if (!url) return;
         if (window.Android && typeof window.Android.openTikTokUrl === "function") {
           try { window.Android.openTikTokUrl(url); return; } catch (_e) {}
         }
+        if (window.AndroidApp && typeof window.AndroidApp.openExternal === "function") {
+          try { window.AndroidApp.openExternal(url); return; } catch (_e) {}
+        }
         var ua = navigator.userAgent || "";
         if (/Android/i.test(ua)) {
           var noProtocol = String(url).replace(/^https?:\/\//, "");
           var intentUrl = "intent://" + noProtocol +
-            "#Intent;scheme=https;package=com.zhiliaoapp.musically;" +
+            "#Intent;scheme=https;action=android.intent.action.VIEW;" +
+            "package=com.zhiliaoapp.musically;" +
             "S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
-          window.location.href = intentUrl;
+          openExternalAnchor(intentUrl);
           return;
         }
         if (/iPhone|iPad|iPod/i.test(ua)) {
-          window.location.href = url;
+          openExternalAnchor(url);
           return;
         }
         window.open(url, "_blank", "noopener");
