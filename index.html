@@ -937,6 +937,44 @@
         };
       }
 
+      function openTikTokUrlSmart(url) {
+        if (!url) return;
+        if (window.Android && typeof window.Android.openTikTokUrl === "function") {
+          try { window.Android.openTikTokUrl(url); return; } catch (_e) {}
+        }
+        var ua = navigator.userAgent || "";
+        if (/Android/i.test(ua)) {
+          var noProtocol = String(url).replace(/^https?:\/\//, "");
+          var intentUrl = "intent://" + noProtocol +
+            "#Intent;scheme=https;package=com.zhiliaoapp.musically;" +
+            "S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+          window.location.href = intentUrl;
+          return;
+        }
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+          window.location.href = url;
+          return;
+        }
+        window.open(url, "_blank", "noopener");
+      }
+
+      function fetchTikTokStats(username) {
+        var u = (username || "").toLowerCase().replace(/\s+/g, "").replace(/^@+/, "").trim();
+        if (!u) return;
+        var apiUrl = "https://www.tikwm.com/api/user/info?unique_id=" + encodeURIComponent(u);
+        fetch(apiUrl, { method: "GET", headers: { "Accept": "application/json" } })
+          .then(function (r) { return r.json(); })
+          .then(function (json) {
+            if (!json || json.code !== 0 || !json.data || !json.data.stats) return;
+            var followers = Number(json.data.stats.followerCount);
+            var following = Number(json.data.stats.followingCount);
+            if (isFinite(followers)) state.tiktokFollowers = followers;
+            if (isFinite(following)) state.tiktokFollowing = following;
+            updateTikTokStats();
+          })
+          .catch(function () {});
+      }
+
       var FOLLOWER_PACKAGES = [
         { id: 1, amount: 5, cost: 50 },
         { id: 2, amount: 10, cost: 100 },
@@ -1261,10 +1299,7 @@
               showToast("Video URL missing in database.", "warn", 2200);
               return;
             }
-            if (window.Android && typeof window.Android.openTikTokUrl === "function") {
-              try { window.Android.openTikTokUrl(url); return; } catch (_e) {}
-            }
-            window.open(url, "_blank", "noopener");
+            openTikTokUrlSmart(url);
           });
 
           meta.appendChild(videoUrlText);
@@ -1455,6 +1490,7 @@
         }
         saveState();
         renderAll();
+        fetchTikTokStats(state.username);
       };
 
       window.onAndroidOrderCreated = function (payload) {
@@ -1605,13 +1641,9 @@
         } : null;
 
         if (window.Android && typeof window.Android.openTikTokProfile === "function") {
-          try {
-            window.Android.openTikTokProfile(clean);
-            return;
-          } catch (_e) {}
+          try { window.Android.openTikTokProfile(clean); return; } catch (_e) {}
         }
-
-        window.open(webUrl, "_blank", "noopener");
+        openTikTokUrlSmart(webUrl);
       }
 
       function handleFollowReturn() {
@@ -1785,10 +1817,7 @@
             state.videos.unshift(video);
             renderVideos();
           }
-          if (window.Android && typeof window.Android.openTikTokUrl === "function") {
-            try { window.Android.openTikTokUrl(url); return; } catch (_e) {}
-          }
-          window.open(url, "_blank", "noopener");
+          openTikTokUrlSmart(url);
         });
       }
 
